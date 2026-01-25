@@ -1,0 +1,7 @@
+{
+  "name": "DoQline - Virtual Clinic Queue",
+  "description": "A sophisticated virtual queue management system for clinics featuring automated SMS/WhatsApp notifications, real-time status updates, and a comprehensive dashboard for receptionists and doctors.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
