@@ -21,14 +21,22 @@ function ticketToDbFormat(ticket: Ticket): any {
     queue_number: ticket.queueNumber,
     name: ticket.name,
     phone: ticket.phone,
+    member_id: ticket.memberId,
     channel: ticket.channel,
     status: ticket.status,
+    branch_id: ticket.branchId,
+    service_category: ticket.serviceCategory,
+    counter_id: ticket.counterId,
+    teller_id: ticket.tellerId,
     joined_at: ticket.joinedAt,
     called_at: ticket.calledAt,
-    consult_started_at: ticket.consultStartedAt,
-    consult_ended_at: ticket.consultEndedAt,
+    transaction_started_at: ticket.transactionStartedAt,
+    transaction_ended_at: ticket.transactionEndedAt,
     bumped_at: ticket.bumpedAt,
     feedback_stars: ticket.feedbackStars,
+    audit_notes: ticket.auditNotes,
+    wait_time_minutes: ticket.waitTimeMinutes,
+    is_no_show: ticket.isNoShow,
   };
 }
 
@@ -38,14 +46,22 @@ function ticketFromDbFormat(dbTicket: any): Ticket {
     queueNumber: dbTicket.queue_number ?? dbTicket.queueNumber,
     name: dbTicket.name,
     phone: dbTicket.phone,
+    memberId: dbTicket.member_id ?? dbTicket.memberId,
     channel: dbTicket.channel,
     status: dbTicket.status,
+    branchId: dbTicket.branch_id ?? dbTicket.branchId,
+    serviceCategory: dbTicket.service_category ?? dbTicket.serviceCategory,
+    counterId: dbTicket.counter_id ?? dbTicket.counterId,
+    tellerId: dbTicket.teller_id ?? dbTicket.tellerId,
     joinedAt: dbTicket.joined_at ?? dbTicket.joinedAt,
     calledAt: dbTicket.called_at ?? dbTicket.calledAt,
-    consultStartedAt: dbTicket.consult_started_at ?? dbTicket.consultStartedAt,
-    consultEndedAt: dbTicket.consult_ended_at ?? dbTicket.consultEndedAt,
+    transactionStartedAt: dbTicket.transaction_started_at ?? dbTicket.transactionStartedAt,
+    transactionEndedAt: dbTicket.transaction_ended_at ?? dbTicket.transactionEndedAt,
     bumpedAt: dbTicket.bumped_at ?? dbTicket.bumpedAt,
     feedbackStars: dbTicket.feedback_stars ?? dbTicket.feedbackStars,
+    auditNotes: dbTicket.audit_notes ?? dbTicket.auditNotes,
+    waitTimeMinutes: dbTicket.wait_time_minutes ?? dbTicket.waitTimeMinutes,
+    isNoShow: dbTicket.is_no_show ?? dbTicket.isNoShow,
   };
 }
 
@@ -128,14 +144,22 @@ export async function updateTicketInSupabase(id: string, updates: Partial<Ticket
     if (updates.queueNumber !== undefined) dbUpdates.queue_number = updates.queueNumber;
     if (updates.name !== undefined) dbUpdates.name = updates.name;
     if (updates.phone !== undefined) dbUpdates.phone = updates.phone;
+    if (updates.memberId !== undefined) dbUpdates.member_id = updates.memberId;
     if (updates.channel !== undefined) dbUpdates.channel = updates.channel;
     if (updates.status !== undefined) dbUpdates.status = updates.status;
+    if (updates.branchId !== undefined) dbUpdates.branch_id = updates.branchId;
+    if (updates.serviceCategory !== undefined) dbUpdates.service_category = updates.serviceCategory;
+    if (updates.counterId !== undefined) dbUpdates.counter_id = updates.counterId;
+    if (updates.tellerId !== undefined) dbUpdates.teller_id = updates.tellerId;
     if (updates.joinedAt !== undefined) dbUpdates.joined_at = updates.joinedAt;
     if (updates.calledAt !== undefined) dbUpdates.called_at = updates.calledAt;
-    if (updates.consultStartedAt !== undefined) dbUpdates.consult_started_at = updates.consultStartedAt;
-    if (updates.consultEndedAt !== undefined) dbUpdates.consult_ended_at = updates.consultEndedAt;
+    if (updates.transactionStartedAt !== undefined) dbUpdates.transaction_started_at = updates.transactionStartedAt;
+    if (updates.transactionEndedAt !== undefined) dbUpdates.transaction_ended_at = updates.transactionEndedAt;
     if (updates.bumpedAt !== undefined) dbUpdates.bumped_at = updates.bumpedAt;
     if (updates.feedbackStars !== undefined) dbUpdates.feedback_stars = updates.feedbackStars;
+    if (updates.auditNotes !== undefined) dbUpdates.audit_notes = updates.auditNotes;
+    if (updates.waitTimeMinutes !== undefined) dbUpdates.wait_time_minutes = updates.waitTimeMinutes;
+    if (updates.isNoShow !== undefined) dbUpdates.is_no_show = updates.isNoShow;
 
     const { data, error } = await supabase
       .from('tickets')

@@ -1,56 +1,79 @@
-
-import React from 'react';
-import { Ticket, TicketStatus, ClinicConfig } from '../types';
-import { UserCheck, UserX, ArrowRight, Info } from 'lucide-react';
+import React, { useState } from 'react';
+import { Ticket, TicketStatus, BranchConfig } from '../types';
+import { UserCheck, UserX, ArrowRight, Info, FileText, Building2 } from 'lucide-react';
 
 interface ReceptionDashboardProps {
   tickets: Ticket[];
   updateStatus: (id: string, status: TicketStatus) => void;
-  clinic: ClinicConfig;
+  updateTicket: (id: string, updates: Partial<Ticket>) => void;
+  branch: BranchConfig;
 }
 
-const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, updateStatus, clinic }) => {
-  const waiting = tickets.filter(t => t.status === TicketStatus.WAITING).sort((a, b) => a.queueNumber - b.queueNumber);
-  const called = tickets.filter(t => t.status === TicketStatus.CALLED).sort((a, b) => a.queueNumber - b.queueNumber);
-  const inConsult = tickets.filter(t => t.status === TicketStatus.IN_CONSULT);
+const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, updateStatus, updateTicket, branch }) => {
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [auditNote, setAuditNote] = useState('');
   
-  const confirmedNext = tickets.find(t => t.status === TicketStatus.ARRIVED);
+  // Filter tickets for this branch
+  const branchTickets = tickets.filter(t => t.branchId === branch.id);
+  const waiting = branchTickets.filter(t => t.status === TicketStatus.WAITING).sort((a, b) => a.queueNumber - b.queueNumber);
+  const called = branchTickets.filter(t => t.status === TicketStatus.CALLED).sort((a, b) => a.queueNumber - b.queueNumber);
+  const inTransaction = branchTickets.filter(t => t.status === TicketStatus.IN_TRANSACTION);
+  
+  const confirmedNext = branchTickets.find(t => t.status === TicketStatus.ARRIVED);
   const nextUp = waiting[0];
+
+  const handleAddAuditNote = () => {
+    if (selectedTicket && auditNote.trim()) {
+      const existingNotes = selectedTicket.auditNotes || '';
+      const newNotes = existingNotes 
+        ? `${existingNotes}\n[${new Date().toLocaleString()}] ${auditNote}`
+        : `[${new Date().toLocaleString()}] ${auditNote}`;
+      updateTicket(selectedTicket.id, { auditNotes: newNotes });
+      setAuditNote('');
+      setSelectedTicket(null);
+    }
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-full">
       {/* Queue Grid */}
       <div className="lg:col-span-8 space-y-8">
-        <div>
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            Queue Overview <span className="text-sm font-normal text-slate-400">({waiting.length + called.length} Active)</span>
+        <div className="flex items-center gap-2 mb-4">
+          <Building2 size={20} className="text-slate-500" />
+          <h2 className="text-xl font-bold">
+            Queue Overview - {branch.name}
+            <span className="text-sm font-normal text-slate-400 ml-2">
+              ({waiting.length + called.length} Active)
+            </span>
           </h2>
-          <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-            {tickets.filter(t => t.status !== TicketStatus.SERVED && t.status !== TicketStatus.REMOVED).map(ticket => (
-              <div 
-                key={ticket.id}
-                className={`aspect-square rounded-xl flex flex-col items-center justify-center border-2 transition-all ${
-                  ticket.status === TicketStatus.CALLED ? 'bg-orange-50 border-orange-200 text-orange-600' :
-                  ticket.status === TicketStatus.IN_CONSULT ? 'bg-blue-600 border-blue-600 text-white' :
-                  ticket.status === TicketStatus.ARRIVED ? 'bg-green-600 border-green-600 text-white animate-pulse' :
-                  'bg-white border-slate-100 text-slate-400 hover:border-slate-300'
-                }`}
-              >
-                <span className="text-xl font-black">{ticket.queueNumber}</span>
-                <span className="text-[10px] uppercase font-bold tracking-tighter opacity-70">
-                  {ticket.status === TicketStatus.ARRIVED ? 'Next' : 
-                   ticket.status === TicketStatus.IN_CONSULT ? 'In' : 
-                   ticket.status === TicketStatus.CALLED ? 'Called' : 'Waiting'}
-                </span>
-              </div>
-            ))}
-            {/* Empty slots representation */}
-            {Array.from({ length: Math.max(0, 16 - tickets.length) }).map((_, i) => (
-              <div key={i} className="aspect-square rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center">
-                <span className="text-slate-200 text-xl font-black">{tickets.length + i + 1}</span>
-              </div>
-            ))}
-          </div>
+        </div>
+        
+        <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+          {branchTickets.filter(t => t.status !== TicketStatus.SERVED && t.status !== TicketStatus.REMOVED).map(ticket => (
+            <div 
+              key={ticket.id}
+              onClick={() => setSelectedTicket(ticket)}
+              className={`aspect-square rounded-xl flex flex-col items-center justify-center border-2 transition-all cursor-pointer ${
+                ticket.status === TicketStatus.CALLED ? 'bg-orange-50 border-orange-200 text-orange-600' :
+                ticket.status === TicketStatus.IN_TRANSACTION ? 'bg-blue-600 border-blue-600 text-white' :
+                ticket.status === TicketStatus.ARRIVED ? 'bg-green-600 border-green-600 text-white animate-pulse' :
+                'bg-white border-slate-100 text-slate-400 hover:border-slate-300'
+              }`}
+            >
+              <span className="text-xl font-black">{ticket.queueNumber}</span>
+              <span className="text-[10px] uppercase font-bold tracking-tighter opacity-70">
+                {ticket.status === TicketStatus.ARRIVED ? 'Next' : 
+                 ticket.status === TicketStatus.IN_TRANSACTION ? 'In' : 
+                 ticket.status === TicketStatus.CALLED ? 'Called' : 'Waiting'}
+              </span>
+            </div>
+          ))}
+          {/* Empty slots representation */}
+          {Array.from({ length: Math.max(0, 16 - branchTickets.length) }).map((_, i) => (
+            <div key={i} className="aspect-square rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center">
+              <span className="text-slate-200 text-xl font-black">{branchTickets.length + i + 1}</span>
+            </div>
+          ))}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -66,6 +89,7 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
                       </div>
                       <div>
                         <p className="font-bold text-slate-800">{t.name}</p>
+                        {t.memberId && <p className="text-xs text-slate-500">ID: {t.memberId}</p>}
                         <p className="text-xs text-slate-400">Called {new Date(t.calledAt!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                       </div>
                     </div>
@@ -89,28 +113,28 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
                 ))}
               </ul>
             ) : (
-              <p className="text-slate-300 italic text-sm">No patients currently in "Called" state.</p>
+              <p className="text-slate-300 italic text-sm">No customers currently in "Called" state.</p>
             )}
           </div>
 
           <div className="p-6 bg-white rounded-2xl shadow-sm border border-slate-100">
-            <h3 className="text-slate-400 text-xs font-bold uppercase mb-4 tracking-widest">In Consultation</h3>
-            {inConsult.length > 0 ? (
+            <h3 className="text-slate-400 text-xs font-bold uppercase mb-4 tracking-widest">In Transaction</h3>
+            {inTransaction.length > 0 ? (
               <ul className="space-y-4">
-                {inConsult.map(t => (
+                {inTransaction.map(t => (
                   <li key={t.id} className="flex items-center gap-3 p-3 bg-blue-50 rounded-xl">
                     <div className="w-10 h-10 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold">
                       {t.queueNumber}
                     </div>
                     <div>
                       <p className="font-bold text-blue-900">{t.name}</p>
-                      <p className="text-xs text-blue-400">Dr. Gravesande</p>
+                      {t.tellerId && <p className="text-xs text-blue-400">Teller: {t.tellerId}</p>}
                     </div>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-slate-300 italic text-sm">No active consultations.</p>
+              <p className="text-slate-300 italic text-sm">No active transactions.</p>
             )}
           </div>
         </div>
@@ -125,10 +149,13 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
               {confirmedNext ? (
                 <>
                   <div className="w-24 h-24 bg-green-500 rounded-3xl flex items-center justify-center text-4xl font-black mb-4 shadow-[0_0_30px_rgba(34,197,94,0.4)]">
-                    {confirmedNext.queueNumber}
+                  {confirmedNext.queueNumber}
                   </div>
                   <p className="text-xl font-bold mb-1">{confirmedNext.name}</p>
-                  <p className="text-green-400 text-sm font-medium">Ready for Doctor</p>
+                  {confirmedNext.memberId && (
+                    <p className="text-sm text-green-300 mb-1">ID: {confirmedNext.memberId}</p>
+                  )}
+                  <p className="text-green-400 text-sm font-medium">Ready for Teller</p>
                 </>
               ) : (
                 <>
@@ -147,7 +174,7 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
                 onClick={() => nextUp && updateStatus(nextUp.id, TicketStatus.CALLED)}
                 className="w-full py-4 bg-white text-slate-900 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-100 transition-all disabled:opacity-30"
               >
-                Call Next Patient <ArrowRight size={18} />
+                Call Next Customer <ArrowRight size={18} />
               </button>
             </div>
           </div>
@@ -158,11 +185,55 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
           <div className="flex gap-3">
             <Info className="text-blue-500 shrink-0" size={20} />
             <p className="text-sm text-blue-700 leading-snug">
-              Calling a patient starts their <strong>10-minute arrival countdown</strong>. They will be polled at the 1-minute mark.
+              Calling a customer starts their <strong>{branch.gracePeriodMinutes}-minute arrival countdown</strong>. They will be polled at the 1-minute mark.
             </p>
           </div>
         </div>
       </div>
+
+      {/* Audit Notes Modal */}
+      {selectedTicket && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-3xl p-8 shadow-2xl">
+            <h3 className="text-2xl font-black text-slate-800 mb-2">Add Audit Note</h3>
+            <p className="text-slate-600 mb-4">Ticket #{selectedTicket.queueNumber} - {selectedTicket.name}</p>
+            
+            {selectedTicket.auditNotes && (
+              <div className="mb-4 p-4 bg-slate-50 rounded-xl max-h-40 overflow-y-auto">
+                <p className="text-xs text-slate-500 font-bold mb-2">Existing Notes:</p>
+                <p className="text-sm text-slate-700 whitespace-pre-wrap">{selectedTicket.auditNotes}</p>
+              </div>
+            )}
+            
+            <textarea
+              value={auditNote}
+              onChange={(e) => setAuditNote(e.target.value)}
+              placeholder="Enter audit note or exception details..."
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all mb-4"
+              rows={4}
+            />
+            
+            <div className="flex gap-3">
+              <button
+                onClick={handleAddAuditNote}
+                disabled={!auditNote.trim()}
+                className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <FileText size={18} /> Add Note
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedTicket(null);
+                  setAuditNote('');
+                }}
+                className="px-6 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

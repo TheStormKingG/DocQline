@@ -1,42 +1,46 @@
-
 import React, { useState, useEffect } from 'react';
-import { Ticket, TicketStatus, ClinicConfig } from '../types';
-import { Users, Clock, Bell, ChevronLeft, Star } from 'lucide-react';
+import { Ticket, TicketStatus, BranchConfig } from '../types';
+import { Users, Clock, Bell, ChevronLeft, Star, Building2 } from 'lucide-react';
 
-interface PatientStatusProps {
+interface CustomerStatusProps {
   ticket: Ticket;
   allTickets: Ticket[];
-  clinic: ClinicConfig;
+  branch: BranchConfig;
   onCancel: () => void;
   onSubmitFeedback: (id: string, stars: number) => void;
 }
 
-const PatientStatus: React.FC<PatientStatusProps> = ({ ticket, allTickets, clinic, onCancel, onSubmitFeedback }) => {
-  const [timeLeft, setTimeLeft] = useState(600); // 10 minutes in seconds
+const CustomerStatus: React.FC<CustomerStatusProps> = ({ ticket, allTickets, branch, onCancel, onSubmitFeedback }) => {
+  const gracePeriodSeconds = branch.gracePeriodMinutes * 60;
+  const [timeLeft, setTimeLeft] = useState(gracePeriodSeconds);
   const [showPoll, setShowPoll] = useState(false);
   const [feedback, setFeedback] = useState<number | null>(null);
 
-  const activeTickets = allTickets.filter(t => t.status === TicketStatus.WAITING || t.status === TicketStatus.CALLED || t.status === TicketStatus.ARRIVED);
+  // Filter tickets for same branch and active status
+  const activeTickets = allTickets.filter(t => 
+    t.branchId === ticket.branchId && 
+    (t.status === TicketStatus.WAITING || t.status === TicketStatus.CALLED || t.status === TicketStatus.ARRIVED)
+  );
   const sortedTickets = [...activeTickets].sort((a, b) => a.queueNumber - b.queueNumber);
   const peopleAhead = sortedTickets.findIndex(t => t.id === ticket.id);
-  const eta = (peopleAhead + 1) * clinic.avgConsultTime;
+  const eta = (peopleAhead + 1) * branch.avgTransactionTime;
 
   // Handle countdown if status is CALLED
   useEffect(() => {
-    // Fixed: Replaced NodeJS.Timeout with ReturnType<typeof setInterval> for browser compatibility
     let timer: ReturnType<typeof setInterval>;
     if (ticket.status === TicketStatus.CALLED && timeLeft > 0) {
       timer = setInterval(() => {
         setTimeLeft(prev => {
           const next = prev - 1;
-          // Trigger poll at 1 minute (60 seconds)
-          if (next === 60) setShowPoll(true);
+          // Trigger poll at 1 minute (60 seconds) before expiration
+          const oneMinuteBefore = branch.gracePeriodMinutes * 60 - 60;
+          if (next === oneMinuteBefore) setShowPoll(true);
           return next;
         });
       }, 1000);
     }
     return () => clearInterval(timer);
-  }, [ticket.status, timeLeft]);
+  }, [ticket.status, timeLeft, branch.gracePeriodMinutes]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -50,7 +54,7 @@ const PatientStatus: React.FC<PatientStatusProps> = ({ ticket, allTickets, clini
         <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
           <Star size={32} fill="currentColor" />
         </div>
-        <h2 className="text-2xl font-bold mb-2">Visit Complete!</h2>
+        <h2 className="text-2xl font-bold mb-2">Transaction Complete!</h2>
         <p className="text-slate-600 mb-8">How was your wait-time satisfaction today?</p>
         <div className="flex justify-center gap-2 mb-8">
           {[1, 2, 3, 4, 5].map(star => (
@@ -88,16 +92,24 @@ const PatientStatus: React.FC<PatientStatusProps> = ({ ticket, allTickets, clini
           <div className="flex justify-between items-start">
             <div>
               <p className="text-blue-100 font-medium">Hello, {ticket.name}</p>
+              {ticket.memberId && (
+                <p className="text-blue-200 text-xs mt-1">Member ID: {ticket.memberId}</p>
+              )}
               <h2 className="text-4xl font-black mt-1">#{ticket.queueNumber}</h2>
             </div>
             <div className="bg-white/20 p-3 rounded-xl backdrop-blur-md">
               <Bell size={24} />
             </div>
           </div>
+
+          <div className="mt-4 flex items-center gap-2 text-blue-100 text-sm">
+            <Building2 size={14} />
+            <span>{branch.name}</span>
+          </div>
           
           {ticket.status === TicketStatus.CALLED ? (
             <div className="mt-6 bg-white/10 rounded-xl p-4 border border-white/20">
-              <p className="text-sm font-bold">PLEASE ARRIVE AT RECEPTION</p>
+              <p className="text-sm font-bold">PLEASE ARRIVE AT COUNTER</p>
               <p className="text-3xl font-mono mt-1">{formatTime(timeLeft)}</p>
             </div>
           ) : (
@@ -106,7 +118,7 @@ const PatientStatus: React.FC<PatientStatusProps> = ({ ticket, allTickets, clini
                 <p className="text-[10px] uppercase font-bold tracking-wider opacity-70">Ahead</p>
                 <div className="flex items-center gap-2">
                   <Users size={16} />
-                  <span className="text-xl font-bold">{peopleAhead} Patients</span>
+                  <span className="text-xl font-bold">{peopleAhead} Customers</span>
                 </div>
               </div>
               <div className="flex-1 bg-white/10 rounded-xl p-3 border border-white/20">
@@ -125,10 +137,17 @@ const PatientStatus: React.FC<PatientStatusProps> = ({ ticket, allTickets, clini
             <h3 className="font-bold text-slate-800">Queue Timeline</h3>
             <div className="space-y-2">
               <TimelineItem label="Joined Queue" active={true} sub={new Date(ticket.joinedAt).toLocaleTimeString()} />
-              <TimelineItem label="Called to Reception" active={ticket.status !== TicketStatus.WAITING} sub={ticket.status === TicketStatus.CALLED ? 'Expiring soon' : ''} />
-              <TimelineItem label="Entered Consultation" active={ticket.status === TicketStatus.IN_CONSULT || ticket.status === TicketStatus.SERVED} />
+              <TimelineItem label="Called to Counter" active={ticket.status !== TicketStatus.WAITING} sub={ticket.status === TicketStatus.CALLED ? 'Expiring soon' : ''} />
+              <TimelineItem label="Transaction Started" active={ticket.status === TicketStatus.IN_TRANSACTION || ticket.status === TicketStatus.SERVED} />
             </div>
           </div>
+
+          {ticket.serviceCategory && (
+            <div className="p-4 bg-slate-50 rounded-xl">
+              <p className="text-xs text-slate-500 font-bold uppercase mb-1">Service Category</p>
+              <p className="text-sm font-semibold text-slate-800">{ticket.serviceCategory.replace('_', ' ')}</p>
+            </div>
+          )}
 
           <button className="w-full py-4 border-2 border-slate-100 rounded-xl text-slate-600 font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
             <Bell size={18} /> Notify me when I'm next
@@ -139,8 +158,8 @@ const PatientStatus: React.FC<PatientStatusProps> = ({ ticket, allTickets, clini
       {showPoll && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-end md:items-center justify-center p-4">
           <div className="bg-white w-full max-w-sm rounded-3xl p-8 animate-in slide-in-from-bottom-8 duration-500 shadow-2xl">
-            <h3 className="text-2xl font-black text-slate-800 mb-2">Next Seat Poll</h3>
-            <p className="text-slate-600 mb-6">Are you currently present at the reception "Next Seat"?</p>
+            <h3 className="text-2xl font-black text-slate-800 mb-2">You're Next!</h3>
+            <p className="text-slate-600 mb-6">Are you currently present at the counter?</p>
             <div className="grid grid-cols-2 gap-4">
               <button 
                 onClick={() => setShowPoll(false)}
@@ -172,4 +191,4 @@ const TimelineItem = ({ label, active, sub }: { label: string, active: boolean, 
   </div>
 );
 
-export default PatientStatus;
+export default CustomerStatus;

@@ -2,9 +2,9 @@
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# DocQline - Virtual Clinic Queue
+# Community Credit Union - Service Queue System
 
-A virtual clinic queue management system for managing patient appointments and queue status.
+A multi-branch financial institution service queue management system for banks and credit unions. Manages customer/member queues with real-time updates, multi-branch support, and comprehensive analytics.
 
 View your app in AI Studio: https://ai.studio/apps/drive/1Wcg4cKe3DGIRE8QT2opa_SuM786KO252
 
@@ -72,8 +72,13 @@ The app will be automatically deployed and available at:
 
 ## Features
 
-- Patient queue management
-- Real-time status updates
-- Receptionist dashboard
-- Doctor interface
-- Supabase integration with localStorage fallback
+- **Multi-Branch Support**: Manage queues across multiple branch locations
+- **Customer/Member Queue Management**: QR join → name + service category → ticket number → live position + ETA
+- **Real-Time Updates**: SMS or WhatsApp notifications with threshold reminders
+- **Teller Interface**: Call next, start/finish transaction, pause queue, flag no-show
+- **Reception Dashboard**: Handle exceptions, add audit notes, manage arrivals
+- **Manager Analytics**: Exportable metrics (wait time, no-shows, peak hours, service breakdown)
+- **Role-Based Access**: Customer, Reception, Teller, and Manager views
+- **Configurable Grace Periods**: Customizable arrival countdown per branch
+- **Service-Time Learning**: Automatic ETA calculation based on historical data
+- **Supabase Integration**: Cloud database with localStorage fallback
