@@ -23,7 +23,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, view, setView, resetAl
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img 
-              src="/logo1.png" 
+              src="./logo1.png" 
               alt="Laborie Co-operative Credit Union" 
               className="h-10 w-10 object-contain"
             />

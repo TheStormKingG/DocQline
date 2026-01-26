@@ -35,7 +35,7 @@ const CustomerJoin: React.FC<CustomerJoinProps> = ({ branches, onJoin }) => {
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-3">
             <img 
-              src="/logo1.png" 
+              src="./logo1.png" 
               alt="Laborie Co-operative Credit Union" 
               className="h-12 w-12 object-contain"
             />
