@@ -37,7 +37,8 @@ const CustomerJoin: React.FC<CustomerJoinProps> = ({ branches, onJoin }) => {
             <img 
               src="./logo1.png" 
               alt="Laborie Co-operative Credit Union" 
-              className="h-12 w-12 object-contain"
+              className="h-12 w-12 object-contain bg-transparent"
+              style={{ backgroundColor: 'transparent' }}
             />
             <div>
               <h2 className="text-2xl font-bold leading-tight">Laborie Co-operative</h2>

@@ -7,3 +7,9 @@
 body {
   font-family: 'Inter', sans-serif;
 }
+
+/* Ensure logo transparency is preserved */
+img[src*="logo1.png"] {
+  background-color: transparent !important;
+  background: transparent !important;
+}

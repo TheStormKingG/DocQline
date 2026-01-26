@@ -25,7 +25,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, view, setView, resetAl
             <img 
               src="./logo1.png" 
               alt="Laborie Co-operative Credit Union" 
-              className="h-10 w-10 object-contain"
+              className="h-10 w-10 object-contain bg-transparent"
+              style={{ backgroundColor: 'transparent' }}
             />
             <div className="flex flex-col">
               <h1 className="text-lg font-bold text-slate-800 leading-tight">Laborie Co-operative</h1>
