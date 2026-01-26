@@ -12,23 +12,33 @@ import {
   saveAllTicketsToSupabase 
 } from './supabase';
 
-// Multi-branch configuration (inspired by Laborie Credit Union)
+// Laborie Co-operative Credit Union - Multi-branch configuration
+// Based on https://mylaboriecu.com/about/
 const BRANCHES: BranchConfig[] = [
   {
-    id: 'main-branch',
-    name: 'Main Branch',
-    address: '123 Main Street, City, State 12345',
+    id: 'laborie-branch',
+    name: 'Laborie Branch',
+    address: 'Allan Louisy Street, Laborie, Saint Lucia',
     service: 'Full Service Banking',
     avgTransactionTime: 8,
     gracePeriodMinutes: 10,
     isPaused: false
   },
   {
-    id: 'downtown-branch',
-    name: 'Downtown Branch',
-    address: '456 Commerce Ave, City, State 12345',
+    id: 'vieux-fort-branch',
+    name: 'Vieux Fort Branch',
+    address: 'Vieux Fort, Saint Lucia',
     service: 'Full Service Banking',
     avgTransactionTime: 7,
+    gracePeriodMinutes: 10,
+    isPaused: false
+  },
+  {
+    id: 'castries-branch',
+    name: 'Castries Branch',
+    address: 'Castries, Saint Lucia',
+    service: 'Full Service Banking',
+    avgTransactionTime: 8,
     gracePeriodMinutes: 10,
     isPaused: false
   }

@@ -1,6 +1,6 @@
 {
-  "name": "DoQline - Virtual Clinic Queue",
-  "description": "A sophisticated virtual queue management system for clinics featuring automated SMS/WhatsApp notifications, real-time status updates, and a comprehensive dashboard for receptionists and doctors.",
+  "name": "Laborie Co-operative Credit Union - Service Queue",
+  "description": "Multi-branch service queue management system for Laborie Co-operative Credit Union. Member-owned financial co-operative established 1976, serving Laborie, Vieux Fort, and Castries, Saint Lucia.",
   "requestFramePermissions": [
     "camera"
   ]

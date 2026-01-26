@@ -30,14 +30,24 @@ const CustomerJoin: React.FC<CustomerJoinProps> = ({ branches, onJoin }) => {
 
   return (
     <div className="max-w-md mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100">
-      <div className="bg-blue-600 p-8 text-white">
-        <div className="flex items-center gap-2 mb-2">
-          <Building2 size={24} />
-          <h2 className="text-2xl font-bold">Community Credit Union</h2>
-        </div>
-        <p className="text-blue-100 mt-1">Service Queue System</p>
-        <div className="mt-4 inline-flex items-center gap-2 bg-blue-500/30 px-3 py-1 rounded-full text-xs">
-          <CheckCircle2 size={14} /> Multi-Branch Service
+      <div className="bg-gradient-to-br from-blue-700 to-blue-800 p-8 text-white relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-400/10 rounded-full blur-3xl"></div>
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-3">
+            <img 
+              src="/logo1.png" 
+              alt="Laborie Co-operative Credit Union" 
+              className="h-12 w-12 object-contain"
+            />
+            <div>
+              <h2 className="text-2xl font-bold leading-tight">Laborie Co-operative</h2>
+              <p className="text-blue-100 text-sm">Credit Union</p>
+            </div>
+          </div>
+          <p className="text-blue-100 text-sm mb-2">Service Queue System</p>
+          <div className="mt-4 inline-flex items-center gap-2 bg-yellow-400/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs border border-yellow-400/30">
+            <CheckCircle2 size={14} className="text-yellow-300" /> Est. 1976 • Member-Owned
+          </div>
         </div>
       </div>
 

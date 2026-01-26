@@ -2,9 +2,13 @@
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# Community Credit Union - Service Queue System
+# Laborie Co-operative Credit Union - Service Queue System
 
-A multi-branch financial institution service queue management system for banks and credit unions. Manages customer/member queues with real-time updates, multi-branch support, and comprehensive analytics.
+A multi-branch service queue management system for [Laborie Co-operative Credit Union](https://mylaboriecu.com/about/). Established in 1976, Laborie Credit Union is a member-owned financial co-operative serving the communities of Laborie, Vieux Fort, and Castries, Saint Lucia.
+
+**"We Are Not A Bank, We Are Better!"**
+
+This system manages customer/member queues with real-time updates across all three branches, with comprehensive analytics and role-based access.
 
 View your app in AI Studio: https://ai.studio/apps/drive/1Wcg4cKe3DGIRE8QT2opa_SuM786KO252
 

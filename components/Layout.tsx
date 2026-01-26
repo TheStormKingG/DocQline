@@ -21,11 +21,16 @@ export const Layout: React.FC<LayoutProps> = ({ children, view, setView, resetAl
     <div className="min-h-screen flex flex-col">
       <header className="bg-white border-b sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold">CU</span>
+          <div className="flex items-center gap-3">
+            <img 
+              src="/logo1.png" 
+              alt="Laborie Co-operative Credit Union" 
+              className="h-10 w-10 object-contain"
+            />
+            <div className="flex flex-col">
+              <h1 className="text-lg font-bold text-slate-800 leading-tight">Laborie Co-operative</h1>
+              <p className="text-xs text-slate-600 leading-tight">Credit Union</p>
             </div>
-            <h1 className="text-xl font-bold text-slate-800">Community Credit Union</h1>
           </div>
           
           <nav className="flex bg-slate-100 p-1 rounded-lg">
@@ -79,7 +84,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, view, setView, resetAl
 
       <footer className="bg-white border-t py-4">
         <p className="text-center text-slate-400 text-sm">
-          &copy; {new Date().getFullYear()} Community Credit Union. Multi-branch service queue system.
+          &copy; {new Date().getFullYear()} Laborie Co-operative Credit Union Ltd. Est. 1976
+        </p>
+        <p className="text-center text-slate-500 text-xs mt-1 font-semibold">
+          We Are Not A Bank, We Are Better!
         </p>
       </footer>
     </div>
