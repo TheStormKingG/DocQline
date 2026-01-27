@@ -1,26 +1,63 @@
 import React, { useState } from 'react';
 import { Ticket, TicketStatus, BranchConfig } from '../types';
-import { UserCheck, UserX, ArrowRight, Info, FileText, Building2 } from 'lucide-react';
+import { UserCheck, UserX, ArrowRight, Info, FileText, Building2, LogIn, LogOut, Users } from 'lucide-react';
 
 interface ReceptionDashboardProps {
   tickets: Ticket[];
-  updateStatus: (id: string, status: TicketStatus) => void;
+  updateStatus: (id: string, status: TicketStatus, triggeredBy?: 'system' | 'reception' | 'teller' | 'customer', reason?: string) => void;
   updateTicket: (id: string, updates: Partial<Ticket>) => void;
   branch: BranchConfig;
+  inBuildingCount: number;
+  maxInBuilding: number;
 }
 
-const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, updateStatus, updateTicket, branch }) => {
+const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, updateStatus, updateTicket, branch, inBuildingCount, maxInBuilding }) => {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [auditNote, setAuditNote] = useState('');
   
   // Filter tickets for this branch
   const branchTickets = tickets.filter(t => t.branchId === branch.id);
-  const waiting = branchTickets.filter(t => t.status === TicketStatus.WAITING).sort((a, b) => a.queueNumber - b.queueNumber);
-  const called = branchTickets.filter(t => t.status === TicketStatus.CALLED).sort((a, b) => a.queueNumber - b.queueNumber);
-  const inTransaction = branchTickets.filter(t => t.status === TicketStatus.IN_TRANSACTION);
   
-  const confirmedNext = branchTickets.find(t => t.status === TicketStatus.ARRIVED);
-  const nextUp = waiting[0];
+  // New status-based filtering
+  const remoteWaiting = branchTickets.filter(t => 
+    t.status === TicketStatus.REMOTE_WAITING || t.status === TicketStatus.WAITING
+  ).sort((a, b) => a.queueNumber - b.queueNumber);
+  
+  const eligibleForEntry = branchTickets.filter(t => 
+    t.status === TicketStatus.ELIGIBLE_FOR_ENTRY || t.status === TicketStatus.CALLED
+  ).sort((a, b) => a.queueNumber - b.queueNumber);
+  
+  const inBuilding = branchTickets.filter(t => 
+    t.status === TicketStatus.IN_BUILDING || t.status === TicketStatus.ARRIVED
+  ).sort((a, b) => a.queueNumber - b.queueNumber);
+  
+  const inService = branchTickets.filter(t => 
+    t.status === TicketStatus.IN_SERVICE || t.status === TicketStatus.IN_TRANSACTION
+  );
+  
+  // Legacy support
+  const waiting = remoteWaiting;
+  const called = eligibleForEntry;
+  const inTransaction = inService;
+  
+  const confirmedNext = branchTickets.find(t => 
+    t.status === TicketStatus.ELIGIBLE_FOR_ENTRY || t.status === TicketStatus.ARRIVED
+  );
+  const nextUp = remoteWaiting[0];
+  
+  // Handle mark as entered (IN_BUILDING)
+  const handleMarkEntered = async (ticketId: string) => {
+    if (inBuildingCount >= maxInBuilding) {
+      alert(`⚠️ Building at capacity (${inBuildingCount}/${maxInBuilding}). Cannot mark as entered.`);
+      return;
+    }
+    await updateStatus(ticketId, TicketStatus.IN_BUILDING, 'reception', 'Marked as entered by reception');
+  };
+  
+  // Handle mark as left (back to REMOTE_WAITING)
+  const handleMarkLeft = async (ticketId: string) => {
+    await updateStatus(ticketId, TicketStatus.REMOTE_WAITING, 'reception', 'Marked as left by reception');
+  };
 
   const handleAddAuditNote = () => {
     if (selectedTicket && auditNote.trim()) {
@@ -38,14 +75,25 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-full">
       {/* Queue Grid */}
       <div className="lg:col-span-8 space-y-8">
-        <div className="flex items-center gap-2 mb-4">
-          <Building2 size={20} className="text-slate-500" />
-          <h2 className="text-xl font-bold">
-            Queue Overview - {branch.name}
-            <span className="text-sm font-normal text-slate-400 ml-2">
-              ({waiting.length + called.length} Active)
-            </span>
-          </h2>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Building2 size={20} className="text-slate-500" />
+            <h2 className="text-xl font-bold">
+              Queue Overview - {branch.name}
+              <span className="text-sm font-normal text-slate-400 ml-2">
+                ({remoteWaiting.length + eligibleForEntry.length} Active)
+              </span>
+            </h2>
+          </div>
+          <div className="flex items-center gap-3 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+            <Users size={20} className="text-blue-600" />
+            <div>
+              <p className="text-xs text-blue-600 font-bold uppercase">Inside</p>
+              <p className="text-lg font-black text-blue-700">
+                {inBuildingCount}/{maxInBuilding}
+              </p>
+            </div>
+          </div>
         </div>
         
         <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
@@ -76,7 +124,89 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
           ))}
         </div>
 
+        {/* In Building Section */}
+        <div className="p-6 bg-white rounded-2xl shadow-sm border border-slate-100">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-slate-400 text-xs font-bold uppercase tracking-widest">In Building ({inBuilding.length})</h3>
+            <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+              inBuildingCount >= maxInBuilding 
+                ? 'bg-red-100 text-red-700' 
+                : inBuildingCount >= maxInBuilding * 0.8
+                ? 'bg-yellow-100 text-yellow-700'
+                : 'bg-green-100 text-green-700'
+            }`}>
+              {inBuildingCount >= maxInBuilding ? 'AT CAPACITY' : `${maxInBuilding - inBuildingCount} spots available`}
+            </div>
+          </div>
+          {inBuilding.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {inBuilding.map(t => (
+                <div key={t.id} className="flex items-center justify-between p-3 bg-green-50 rounded-xl border border-green-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-green-600 text-white rounded-lg flex items-center justify-center font-bold">
+                      {t.queueNumber}
+                    </div>
+                    <div>
+                      <p className="font-bold text-green-900">{t.name}</p>
+                      {t.enteredBuildingAt && (
+                        <p className="text-xs text-green-600">
+                          Entered {new Date(t.enteredBuildingAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleMarkLeft(t.id)}
+                    className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-all"
+                    title="Mark as Left"
+                  >
+                    <LogOut size={18} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-slate-300 italic text-sm">No customers currently in building.</p>
+          )}
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
+          <div className="p-6 bg-white rounded-2xl shadow-sm border border-slate-100">
+            <h3 className="text-slate-400 text-xs font-bold uppercase mb-4 tracking-widest">Eligible for Entry</h3>
+            {eligibleForEntry.length > 0 ? (
+              <ul className="space-y-4">
+                {eligibleForEntry.map(t => (
+                  <li key={t.id} className="flex items-center justify-between p-3 bg-orange-50 rounded-xl border border-orange-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center font-bold">
+                        {t.queueNumber}
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-800">{t.name}</p>
+                        {t.memberId && <p className="text-xs text-slate-500">ID: {t.memberId}</p>}
+                        {t.eligibleForEntryAt && (
+                          <p className="text-xs text-slate-400">
+                            Eligible {new Date(t.eligibleForEntryAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleMarkEntered(t.id)}
+                      disabled={inBuildingCount >= maxInBuilding}
+                      className="p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      title={inBuildingCount >= maxInBuilding ? "Building at capacity" : "Mark as Entered"}
+                    >
+                      <LogIn size={18} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-slate-300 italic text-sm">No customers eligible for entry.</p>
+            )}
+          </div>
+
           <div className="p-6 bg-white rounded-2xl shadow-sm border border-slate-100">
             <h3 className="text-slate-400 text-xs font-bold uppercase mb-4 tracking-widest">Calling Now</h3>
             {called.length > 0 ? (
@@ -95,14 +225,15 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
                     </div>
                     <div className="flex gap-2">
                       <button 
-                        onClick={() => updateStatus(t.id, TicketStatus.ARRIVED)}
-                        className="p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200"
-                        title="Mark Arrived"
+                        onClick={() => handleMarkEntered(t.id)}
+                        disabled={inBuildingCount >= maxInBuilding}
+                        className="p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={inBuildingCount >= maxInBuilding ? "Building at capacity" : "Mark as Entered"}
                       >
-                        <UserCheck size={18} />
+                        <LogIn size={18} />
                       </button>
                       <button 
-                        onClick={() => updateStatus(t.id, TicketStatus.NOT_HERE)}
+                        onClick={() => updateStatus(t.id, TicketStatus.REMOTE_WAITING, 'reception', 'No show')}
                         className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200"
                         title="No Show"
                       >
@@ -170,11 +301,11 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
             <div className="mt-8 pt-8 border-t border-slate-800">
               <h4 className="text-xs font-bold text-slate-500 uppercase mb-4">Actions</h4>
               <button 
-                disabled={!nextUp || !!confirmedNext}
-                onClick={() => nextUp && updateStatus(nextUp.id, TicketStatus.CALLED)}
+                disabled={!nextUp || !!confirmedNext || inBuildingCount >= maxInBuilding}
+                onClick={() => nextUp && updateStatus(nextUp.id, TicketStatus.ELIGIBLE_FOR_ENTRY, 'reception', 'Called by reception')}
                 className="w-full py-4 bg-white text-slate-900 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-100 transition-all disabled:opacity-30"
               >
-                Call Next Customer <ArrowRight size={18} />
+                Make Eligible for Entry <ArrowRight size={18} />
               </button>
             </div>
           </div>

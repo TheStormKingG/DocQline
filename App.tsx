@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Ticket, TicketStatus, CommsChannel, BranchConfig, ServiceCategory, Metrics } from './types';
+import { Ticket, TicketStatus, CommsChannel, BranchConfig, ServiceCategory, Metrics, StatusTransition } from './types';
 import CustomerJoin from './components/CustomerJoin';
 import CustomerStatus from './components/CustomerStatus';
 import ReceptionDashboard from './components/ReceptionDashboard';
@@ -22,7 +22,9 @@ const BRANCHES: BranchConfig[] = [
     service: 'Full Service Banking',
     avgTransactionTime: 7,
     gracePeriodMinutes: 10,
-    isPaused: false
+    isPaused: false,
+    maxInBuilding: 9,
+    excludeInServiceFromCapacity: false // Count IN_SERVICE as part of capacity
   }
 ];
 
@@ -35,6 +37,82 @@ const App: React.FC = () => {
   const [tellerId, setTellerId] = useState<string>('Teller-1');
 
   const selectedBranch = BRANCHES.find(b => b.id === selectedBranchId) || BRANCHES[0];
+
+  // Helper: Add audit log entry to ticket
+  const addStatusTransition = (ticket: Ticket, fromStatus: TicketStatus, toStatus: TicketStatus, triggeredBy: 'system' | 'reception' | 'teller' | 'customer', reason?: string): StatusTransition[] => {
+    const transition: StatusTransition = {
+      ticketId: ticket.id,
+      fromStatus,
+      toStatus,
+      timestamp: Date.now(),
+      triggeredBy,
+      reason
+    };
+    return [...(ticket.statusHistory || []), transition];
+  };
+
+  // Helper: Count current in-building capacity
+  const getInBuildingCount = (branchId: string): number => {
+    const branchTickets = tickets.filter(t => t.branchId === branchId);
+    const inBuilding = branchTickets.filter(t => 
+      t.status === TicketStatus.IN_BUILDING
+    );
+    const inService = selectedBranch.excludeInServiceFromCapacity 
+      ? [] 
+      : branchTickets.filter(t => t.status === TicketStatus.IN_SERVICE || t.status === TicketStatus.IN_TRANSACTION);
+    return inBuilding.length + inService.length;
+  };
+
+  // Helper: Send notification to customer
+  const sendNotification = async (ticket: Ticket, message: string) => {
+    // In production, this would integrate with SMS/WhatsApp API
+    console.log(`📱 Notification to ${ticket.name} (${ticket.phone}) via ${ticket.channel}: ${message}`);
+    // Simulate notification - in real app, call Twilio, WhatsApp API, etc.
+    if (ticket.channel === CommsChannel.SMS) {
+      // SMS notification logic here
+    } else if (ticket.channel === CommsChannel.WHATSAPP) {
+      // WhatsApp notification logic here
+    }
+  };
+
+  // Helper: Promote next remote customer to eligible for entry
+  const promoteNextRemoteCustomer = async (branchId: string) => {
+    const branchTickets = tickets.filter(t => t.branchId === branchId);
+    const remoteWaiting = branchTickets
+      .filter(t => t.status === TicketStatus.REMOTE_WAITING || t.status === TicketStatus.WAITING)
+      .sort((a, b) => a.queueNumber - b.queueNumber);
+    
+    if (remoteWaiting.length > 0) {
+      const nextCustomer = remoteWaiting[0];
+      const currentCount = getInBuildingCount(branchId);
+      const positionInside = currentCount + 1;
+      
+      // Update status to ELIGIBLE_FOR_ENTRY
+      const updates: Partial<Ticket> = {
+        status: TicketStatus.ELIGIBLE_FOR_ENTRY,
+        eligibleForEntryAt: Date.now(),
+        statusHistory: addStatusTransition(
+          nextCustomer,
+          nextCustomer.status,
+          TicketStatus.ELIGIBLE_FOR_ENTRY,
+          'system',
+          `Capacity opened (${currentCount}→${currentCount + 1})`
+        )
+      };
+      
+      await updateTicketInSupabase(nextCustomer.id, updates);
+      
+      setTickets(prev => prev.map(t => 
+        t.id === nextCustomer.id ? { ...t, ...updates } : t
+      ));
+      
+      // Send notification
+      await sendNotification(
+        nextCustomer,
+        `You may enter now; you are now #${positionInside} inside.`
+      );
+    }
+  };
 
   // Load tickets from Supabase (with localStorage fallback)
   useEffect(() => {
@@ -86,11 +164,21 @@ const App: React.FC = () => {
       phone,
       memberId,
       channel,
-      status: TicketStatus.WAITING,
+      status: TicketStatus.REMOTE_WAITING, // Start as remote waiting
       branchId,
       serviceCategory,
-      joinedAt: Date.now()
+      joinedAt: Date.now(),
+      statusHistory: [{
+        ticketId: '',
+        fromStatus: TicketStatus.REMOTE_WAITING,
+        toStatus: TicketStatus.REMOTE_WAITING,
+        timestamp: Date.now(),
+        triggeredBy: 'customer',
+        reason: 'Joined queue'
+      }]
     };
+    // Fix the ticketId in statusHistory
+    newTicket.statusHistory![0].ticketId = newTicket.id;
     
     // Save to Supabase (with localStorage fallback)
     await saveTicketToSupabase(newTicket);
@@ -99,41 +187,113 @@ const App: React.FC = () => {
     setCurrentCustomerId(newTicket.id);
   };
 
-  const updateTicketStatus = async (id: string, status: TicketStatus) => {
-    let updates: Partial<Ticket> = { status };
-    if (status === TicketStatus.CALLED) updates.calledAt = Date.now();
-    if (status === TicketStatus.IN_TRANSACTION) {
+  const updateTicketStatus = async (id: string, status: TicketStatus, triggeredBy: 'system' | 'reception' | 'teller' | 'customer' = 'reception', reason?: string) => {
+    const ticket = tickets.find(t => t.id === id);
+    if (!ticket) return;
+    
+    const fromStatus = ticket.status;
+    let updates: Partial<Ticket> = { 
+      status,
+      statusHistory: addStatusTransition(ticket, fromStatus, status, triggeredBy, reason)
+    };
+    
+    // Handle status-specific timestamps
+    if (status === TicketStatus.CALLED || status === TicketStatus.ELIGIBLE_FOR_ENTRY) {
+      updates.calledAt = Date.now();
+      updates.eligibleForEntryAt = Date.now();
+    }
+    if (status === TicketStatus.IN_BUILDING) {
+      updates.enteredBuildingAt = Date.now();
+    }
+    if (status === TicketStatus.REMOTE_WAITING && fromStatus === TicketStatus.IN_BUILDING) {
+      updates.leftBuildingAt = Date.now();
+    }
+    if (status === TicketStatus.IN_TRANSACTION || status === TicketStatus.IN_SERVICE) {
       updates.transactionStartedAt = Date.now();
       updates.tellerId = tellerId;
     }
-    if (status === TicketStatus.SERVED) {
+    if (status === TicketStatus.SERVED || status === TicketStatus.COMPLETED) {
       updates.transactionEndedAt = Date.now();
       // Calculate wait time
-      const ticket = tickets.find(t => t.id === id);
-      if (ticket && ticket.calledAt) {
-        const waitTime = Math.round((Date.now() - ticket.joinedAt) / 60000);
+      if (ticket.enteredBuildingAt) {
+        const waitTime = Math.round((Date.now() - ticket.enteredBuildingAt) / 60000);
         updates.waitTimeMinutes = waitTime;
       }
     }
     if (status === TicketStatus.NOT_HERE) updates.bumpedAt = Date.now();
     
+    // Capacity Gate Logic: Check if marking as IN_BUILDING
+    if (status === TicketStatus.IN_BUILDING) {
+      const currentCount = getInBuildingCount(ticket.branchId);
+      const maxCapacity = selectedBranch.maxInBuilding;
+      
+      if (currentCount >= maxCapacity) {
+        // Cannot enter - at capacity
+        console.warn(`⚠️ Capacity limit reached (${currentCount}/${maxCapacity}). Cannot mark ${ticket.name} as IN_BUILDING.`);
+        return; // Don't update status
+      }
+    }
+    
     // Update in Supabase (with localStorage fallback)
     await updateTicketInSupabase(id, updates);
     
-    setTickets(prev => prev.map(t => {
-      if (t.id !== id) return t;
-      return { ...t, ...updates };
-    }));
+    // Update local state
+    setTickets(prev => {
+      const updated = prev.map(t => {
+        if (t.id !== id) return t;
+        return { ...t, ...updates };
+      });
+      
+      // Check if capacity opened up (someone left building or moved to service)
+      const wasInBuilding = fromStatus === TicketStatus.IN_BUILDING;
+      const isLeavingBuilding = status === TicketStatus.REMOTE_WAITING || 
+                                status === TicketStatus.IN_SERVICE || 
+                                status === TicketStatus.IN_TRANSACTION ||
+                                status === TicketStatus.SERVED ||
+                                status === TicketStatus.COMPLETED ||
+                                status === TicketStatus.REMOVED;
+      
+      if (wasInBuilding && isLeavingBuilding) {
+        // Capacity opened - promote next customer
+        setTimeout(() => promoteNextRemoteCustomer(ticket.branchId), 100);
+      }
+      
+      return updated;
+    });
   };
 
   const updateTicket = async (id: string, updates: Partial<Ticket>) => {
+    const ticket = tickets.find(t => t.id === id);
+    if (!ticket) return;
+    
+    // If status is being updated, add to audit log
+    if (updates.status && updates.status !== ticket.status) {
+      updates.statusHistory = addStatusTransition(
+        ticket,
+        ticket.status,
+        updates.status,
+        'reception',
+        updates.auditNotes ? `Manual update: ${updates.auditNotes}` : 'Manual status update'
+      );
+    }
+    
     // Update in Supabase (with localStorage fallback)
     await updateTicketInSupabase(id, updates);
     
-    setTickets(prev => prev.map(t => {
-      if (t.id !== id) return t;
-      return { ...t, ...updates };
-    }));
+    setTickets(prev => {
+      const updated = prev.map(t => {
+        if (t.id !== id) return t;
+        return { ...t, ...updates };
+      });
+      
+      // Check if capacity opened (if status changed from IN_BUILDING)
+      if (updates.status && ticket.status === TicketStatus.IN_BUILDING && 
+          updates.status !== TicketStatus.IN_BUILDING) {
+        setTimeout(() => promoteNextRemoteCustomer(ticket.branchId), 100);
+      }
+      
+      return updated;
+    });
   };
 
   const submitFeedback = async (id: string, stars: number) => {
@@ -248,6 +408,8 @@ const App: React.FC = () => {
           updateStatus={updateTicketStatus}
           updateTicket={updateTicket}
           branch={selectedBranch}
+          inBuildingCount={getInBuildingCount(selectedBranchId)}
+          maxInBuilding={selectedBranch.maxInBuilding}
         />
       )}
 

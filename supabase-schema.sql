@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS branches (
   avg_transaction_time INTEGER NOT NULL DEFAULT 8, -- in minutes, learned over time
   grace_period_minutes INTEGER NOT NULL DEFAULT 10, -- configurable grace period
   is_active BOOLEAN NOT NULL DEFAULT true,
+  max_in_building INTEGER NOT NULL DEFAULT 9, -- Maximum customers allowed in building
+  exclude_in_service_from_capacity BOOLEAN NOT NULL DEFAULT false, -- Whether to exclude IN_SERVICE from capacity count
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -22,18 +24,22 @@ CREATE TABLE IF NOT EXISTS tickets (
   phone TEXT NOT NULL,
   member_id TEXT, -- Optional member/customer ID
   channel TEXT NOT NULL CHECK (channel IN ('SMS', 'WHATSAPP')),
-  status TEXT NOT NULL CHECK (status IN ('WAITING', 'CALLED', 'ARRIVED', 'NOT_HERE', 'IN_TRANSACTION', 'SERVED', 'REMOVED')),
+  status TEXT NOT NULL CHECK (status IN ('REMOTE_WAITING', 'ELIGIBLE_FOR_ENTRY', 'IN_BUILDING', 'WAITING', 'CALLED', 'ARRIVED', 'NOT_HERE', 'IN_TRANSACTION', 'IN_SERVICE', 'SERVED', 'COMPLETED', 'REMOVED')),
   branch_id TEXT NOT NULL REFERENCES branches(id),
   service_category TEXT CHECK (service_category IN ('DEPOSIT', 'WITHDRAWAL', 'TRANSFER', 'LOAN', 'ACCOUNT_OPENING', 'ACCOUNT_INQUIRY', 'OTHER')),
   counter_id TEXT, -- Which counter/desk is serving
   teller_id TEXT, -- Which teller is serving
   joined_at BIGINT NOT NULL,
   called_at BIGINT,
+  eligible_for_entry_at BIGINT, -- When customer became eligible to enter
+  entered_building_at BIGINT, -- When customer entered the building
+  left_building_at BIGINT, -- When customer left the building
   transaction_started_at BIGINT, -- Previously consult_started_at
   transaction_ended_at BIGINT, -- Previously consult_ended_at
   bumped_at BIGINT,
   feedback_stars INTEGER,
   audit_notes TEXT, -- Reception can add notes
+  status_history JSONB, -- Audit log of all status transitions
   wait_time_minutes INTEGER, -- Calculated wait time
   is_no_show BOOLEAN DEFAULT false, -- Flagged as no-show
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,

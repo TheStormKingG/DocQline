@@ -4,7 +4,7 @@ import { Play, CheckCircle, Clock, User, Pause, Flag, Building2 } from 'lucide-r
 
 interface TellerUIProps {
   tickets: Ticket[];
-  updateStatus: (id: string, status: TicketStatus) => void;
+  updateStatus: (id: string, status: TicketStatus, triggeredBy?: 'system' | 'reception' | 'teller' | 'customer', reason?: string) => void;
   branch: BranchConfig;
   tellerId?: string;
   onPauseQueue?: () => void;
@@ -24,9 +24,11 @@ const TellerUI: React.FC<TellerUIProps> = ({
   // Filter tickets for this branch
   const branchTickets = tickets.filter(t => t.branchId === branch.id);
   const activeTransaction = branchTickets.find(t => 
-    t.status === TicketStatus.IN_TRANSACTION && t.tellerId === tellerId
+    (t.status === TicketStatus.IN_TRANSACTION || t.status === TicketStatus.IN_SERVICE) && t.tellerId === tellerId
   );
-  const nextReady = branchTickets.find(t => t.status === TicketStatus.ARRIVED);
+  const nextReady = branchTickets.find(t => 
+    t.status === TicketStatus.ARRIVED || t.status === TicketStatus.IN_BUILDING
+  );
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
@@ -48,17 +50,19 @@ const TellerUI: React.FC<TellerUIProps> = ({
 
   const handleCallNext = () => {
     if (nextReady) {
-      updateStatus(nextReady.id, TicketStatus.IN_TRANSACTION);
+      updateStatus(nextReady.id, TicketStatus.IN_SERVICE, 'teller', 'Called by teller');
     }
   };
 
   const handleFinishTransaction = () => {
     if (activeTransaction) {
-      updateStatus(activeTransaction.id, TicketStatus.SERVED);
+      updateStatus(activeTransaction.id, TicketStatus.COMPLETED, 'teller', 'Transaction completed');
     }
   };
 
-  const servedCount = branchTickets.filter(t => t.status === TicketStatus.SERVED).length;
+  const servedCount = branchTickets.filter(t => 
+    t.status === TicketStatus.SERVED || t.status === TicketStatus.COMPLETED
+  ).length;
   const avgTime = branch.avgTransactionTime;
 
   return (

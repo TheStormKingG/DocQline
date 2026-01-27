@@ -19,16 +19,19 @@ const CustomerStatus: React.FC<CustomerStatusProps> = ({ ticket, allTickets, bra
   // Filter tickets for same branch and active status
   const activeTickets = allTickets.filter(t => 
     t.branchId === ticket.branchId && 
-    (t.status === TicketStatus.WAITING || t.status === TicketStatus.CALLED || t.status === TicketStatus.ARRIVED)
+    (t.status === TicketStatus.WAITING || t.status === TicketStatus.REMOTE_WAITING ||
+     t.status === TicketStatus.CALLED || t.status === TicketStatus.ELIGIBLE_FOR_ENTRY ||
+     t.status === TicketStatus.ARRIVED || t.status === TicketStatus.IN_BUILDING)
   );
   const sortedTickets = [...activeTickets].sort((a, b) => a.queueNumber - b.queueNumber);
   const peopleAhead = sortedTickets.findIndex(t => t.id === ticket.id);
   const eta = (peopleAhead + 1) * branch.avgTransactionTime;
 
-  // Handle countdown if status is CALLED
+  // Handle countdown if status is CALLED or ELIGIBLE_FOR_ENTRY
   useEffect(() => {
     let timer: ReturnType<typeof setInterval>;
-    if (ticket.status === TicketStatus.CALLED && timeLeft > 0) {
+    const isCalled = ticket.status === TicketStatus.CALLED || ticket.status === TicketStatus.ELIGIBLE_FOR_ENTRY;
+    if (isCalled && timeLeft > 0) {
       timer = setInterval(() => {
         setTimeLeft(prev => {
           const next = prev - 1;
@@ -42,13 +45,19 @@ const CustomerStatus: React.FC<CustomerStatusProps> = ({ ticket, allTickets, bra
     return () => clearInterval(timer);
   }, [ticket.status, timeLeft, branch.gracePeriodMinutes]);
 
+  // Determine if customer is called/eligible
+  const isCalled = ticket.status === TicketStatus.CALLED || ticket.status === TicketStatus.ELIGIBLE_FOR_ENTRY;
+  const isInBuilding = ticket.status === TicketStatus.IN_BUILDING || ticket.status === TicketStatus.ARRIVED;
+  const isInService = ticket.status === TicketStatus.IN_SERVICE || ticket.status === TicketStatus.IN_TRANSACTION;
+  const isCompleted = ticket.status === TicketStatus.COMPLETED || ticket.status === TicketStatus.SERVED;
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  if (ticket.status === TicketStatus.SERVED && !ticket.feedbackStars) {
+  if (isCompleted && !ticket.feedbackStars) {
     return (
       <div className="max-w-md mx-auto bg-white rounded-2xl shadow-xl p-8 text-center">
         <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -88,7 +97,7 @@ const CustomerStatus: React.FC<CustomerStatusProps> = ({ ticket, allTickets, bra
       </button>
 
       <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100">
-        <div className={`p-8 text-white ${ticket.status === TicketStatus.CALLED ? 'bg-orange-500' : 'bg-blue-600'}`}>
+        <div className={`p-8 text-white ${isCalled ? 'bg-orange-500' : isInBuilding ? 'bg-green-600' : 'bg-blue-600'}`}>
           <div className="flex justify-between items-start">
             <div>
               <p className="text-blue-100 font-medium">Hello, {ticket.name}</p>
@@ -107,10 +116,21 @@ const CustomerStatus: React.FC<CustomerStatusProps> = ({ ticket, allTickets, bra
             <span>{branch.name}</span>
           </div>
           
-          {ticket.status === TicketStatus.CALLED ? (
+          {isCalled ? (
             <div className="mt-6 bg-white/10 rounded-xl p-4 border border-white/20">
-              <p className="text-sm font-bold">PLEASE ARRIVE AT COUNTER</p>
-              <p className="text-3xl font-mono mt-1">{formatTime(timeLeft)}</p>
+              <p className="text-sm font-bold">
+                {ticket.status === TicketStatus.ELIGIBLE_FOR_ENTRY ? 'YOU MAY ENTER NOW' : 'PLEASE ARRIVE AT COUNTER'}
+              </p>
+              {ticket.status === TicketStatus.ELIGIBLE_FOR_ENTRY ? (
+                <p className="text-lg mt-1">You are now eligible to enter the building</p>
+              ) : (
+                <p className="text-3xl font-mono mt-1">{formatTime(timeLeft)}</p>
+              )}
+            </div>
+          ) : isInBuilding ? (
+            <div className="mt-6 bg-white/10 rounded-xl p-4 border border-white/20">
+              <p className="text-sm font-bold">YOU ARE INSIDE</p>
+              <p className="text-lg mt-1">Waiting for teller</p>
             </div>
           ) : (
             <div className="mt-6 flex gap-4">
@@ -137,8 +157,9 @@ const CustomerStatus: React.FC<CustomerStatusProps> = ({ ticket, allTickets, bra
             <h3 className="font-bold text-slate-800">Queue Timeline</h3>
             <div className="space-y-2">
               <TimelineItem label="Joined Queue" active={true} sub={new Date(ticket.joinedAt).toLocaleTimeString()} />
-              <TimelineItem label="Called to Counter" active={ticket.status !== TicketStatus.WAITING} sub={ticket.status === TicketStatus.CALLED ? 'Expiring soon' : ''} />
-              <TimelineItem label="Transaction Started" active={ticket.status === TicketStatus.IN_TRANSACTION || ticket.status === TicketStatus.SERVED} />
+              <TimelineItem label="Eligible for Entry" active={isCalled || isInBuilding} sub={isCalled ? (ticket.status === TicketStatus.ELIGIBLE_FOR_ENTRY ? 'You may enter' : 'Expiring soon') : ''} />
+              <TimelineItem label="In Building" active={isInBuilding || isInService} />
+              <TimelineItem label="Transaction Started" active={isInService || isCompleted} />
             </div>
           </div>
 
