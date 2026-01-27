@@ -49,7 +49,7 @@ const CustomerJoin: React.FC<CustomerJoinProps> = ({ branches, onJoin }) => {
               style={{ backgroundColor: 'transparent' }}
             />
             <div>
-              <h2 className="text-sm font-bold leading-tight drop-shadow-lg" style={{ fontSize: 'calc(1.5rem * 0.32)' }}>Credit Union: Vieux Fort Branch</h2>
+              <h2 className="text-sm font-bold leading-tight drop-shadow-lg" style={{ fontSize: 'calc(1.5rem * 0.64)' }}>Credit Union: Vieux Fort Branch</h2>
               <p className="text-blue-100 text-sm drop-shadow-md mt-1">Service Queue System</p>
             </div>
           </div>
