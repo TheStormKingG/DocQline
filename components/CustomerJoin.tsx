@@ -41,11 +41,11 @@ const CustomerJoin: React.FC<CustomerJoinProps> = ({ branches, onJoin }) => {
         <div className="absolute inset-0 bg-gradient-to-br from-blue-900/80 via-blue-800/70 to-blue-900/80"></div>
         {/* Content */}
         <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-3">
+          <div className="flex flex-col items-center text-center mb-3">
             <img 
               src="./logo1.png" 
               alt="Laborie Co-operative Credit Union" 
-              className="h-12 w-12 object-contain bg-transparent"
+              className="h-20 w-20 object-contain bg-transparent mb-4"
               style={{ backgroundColor: 'transparent' }}
             />
             <div>
