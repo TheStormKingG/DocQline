@@ -49,11 +49,10 @@ const CustomerJoin: React.FC<CustomerJoinProps> = ({ branches, onJoin }) => {
               style={{ backgroundColor: 'transparent' }}
             />
             <div>
-              <h2 className="text-2xl font-bold leading-tight drop-shadow-lg">Laborie Co-operative</h2>
-              <p className="text-blue-100 text-sm drop-shadow-md">Credit Union</p>
+              <h2 className="text-2xl font-bold leading-tight drop-shadow-lg">Credit Union: Vieux Fort Branch</h2>
+              <p className="text-blue-100 text-sm drop-shadow-md mt-1">Service Queue System</p>
             </div>
           </div>
-          <p className="text-blue-100 text-sm mb-2 drop-shadow-md">Service Queue System</p>
           <div className="mt-4 inline-flex items-center gap-2 bg-yellow-400/30 backdrop-blur-sm px-3 py-1 rounded-full text-xs border border-yellow-400/40 shadow-lg">
             <CheckCircle2 size={14} className="text-yellow-200" /> Est. 1976 • Member-Owned
           </div>
