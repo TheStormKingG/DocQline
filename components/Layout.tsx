@@ -29,7 +29,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, view, setView, resetAl
               style={{ backgroundColor: 'transparent' }}
             />
             <div className="flex flex-col">
-              <h1 className="text-lg font-bold text-slate-800 leading-tight">Laborie Co-operative: Service Queue System</h1>
+              <h1 className="text-lg font-bold text-slate-800 leading-tight">Laborie Co-operative</h1>
             </div>
           </div>
           
