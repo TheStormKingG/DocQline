@@ -53,7 +53,7 @@ const CustomerJoin: React.FC<CustomerJoinProps> = ({ branches, onJoin }) => {
               <p className="text-blue-100 text-sm drop-shadow-md mt-1">Service Queue System</p>
             </div>
           </div>
-          <div className="mt-4 inline-flex items-center gap-2 bg-yellow-400/30 backdrop-blur-sm px-3 py-1 rounded-full text-xs border border-yellow-400/40 shadow-lg">
+          <div className="mt-4 flex items-center justify-center gap-2 bg-yellow-400/30 backdrop-blur-sm px-3 py-1 rounded-full text-xs border border-yellow-400/40 shadow-lg mx-auto w-fit">
             <CheckCircle2 size={14} className="text-yellow-200" /> Est. 1976 • Member-Owned
           </div>
         </div>
