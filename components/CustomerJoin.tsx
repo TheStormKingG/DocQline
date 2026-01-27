@@ -30,8 +30,16 @@ const CustomerJoin: React.FC<CustomerJoinProps> = ({ branches, onJoin }) => {
 
   return (
     <div className="max-w-md mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100">
-      <div className="bg-gradient-to-br from-blue-700 to-blue-800 p-8 text-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-400/10 rounded-full blur-3xl"></div>
+      <div className="relative p-8 text-white overflow-hidden" style={{ minHeight: '280px' }}>
+        {/* Cover Image Background */}
+        <img 
+          src="./credit-union-vieuxfortsq.jpg" 
+          alt="Laborie Co-operative Credit Union Branch" 
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        {/* Dark Overlay for Text Readability */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/80 via-blue-800/70 to-blue-900/80"></div>
+        {/* Content */}
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-3">
             <img 
@@ -41,13 +49,13 @@ const CustomerJoin: React.FC<CustomerJoinProps> = ({ branches, onJoin }) => {
               style={{ backgroundColor: 'transparent' }}
             />
             <div>
-              <h2 className="text-2xl font-bold leading-tight">Laborie Co-operative</h2>
-              <p className="text-blue-100 text-sm">Credit Union</p>
+              <h2 className="text-2xl font-bold leading-tight drop-shadow-lg">Laborie Co-operative</h2>
+              <p className="text-blue-100 text-sm drop-shadow-md">Credit Union</p>
             </div>
           </div>
-          <p className="text-blue-100 text-sm mb-2">Service Queue System</p>
-          <div className="mt-4 inline-flex items-center gap-2 bg-yellow-400/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs border border-yellow-400/30">
-            <CheckCircle2 size={14} className="text-yellow-300" /> Est. 1976 • Member-Owned
+          <p className="text-blue-100 text-sm mb-2 drop-shadow-md">Service Queue System</p>
+          <div className="mt-4 inline-flex items-center gap-2 bg-yellow-400/30 backdrop-blur-sm px-3 py-1 rounded-full text-xs border border-yellow-400/40 shadow-lg">
+            <CheckCircle2 size={14} className="text-yellow-200" /> Est. 1976 • Member-Owned
           </div>
         </div>
       </div>
