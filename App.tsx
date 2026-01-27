@@ -12,33 +12,15 @@ import {
   saveAllTicketsToSupabase 
 } from './supabase';
 
-// Laborie Co-operative Credit Union - Multi-branch configuration
+// Laborie Co-operative Credit Union - Vieux Fort Branch
 // Based on https://mylaboriecu.com/about/
 const BRANCHES: BranchConfig[] = [
-  {
-    id: 'laborie-branch',
-    name: 'Laborie Branch',
-    address: 'Allan Louisy Street, Laborie, Saint Lucia',
-    service: 'Full Service Banking',
-    avgTransactionTime: 8,
-    gracePeriodMinutes: 10,
-    isPaused: false
-  },
   {
     id: 'vieux-fort-branch',
     name: 'Vieux Fort Branch',
     address: 'Vieux Fort, Saint Lucia',
     service: 'Full Service Banking',
     avgTransactionTime: 7,
-    gracePeriodMinutes: 10,
-    isPaused: false
-  },
-  {
-    id: 'castries-branch',
-    name: 'Castries Branch',
-    address: 'Castries, Saint Lucia',
-    service: 'Full Service Banking',
-    avgTransactionTime: 8,
     gracePeriodMinutes: 10,
     isPaused: false
   }
@@ -48,7 +30,7 @@ const App: React.FC = () => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [currentCustomerId, setCurrentCustomerId] = useState<string | null>(null);
   const [view, setView] = useState<'customer' | 'receptionist' | 'teller' | 'manager'>('customer');
-  const [selectedBranchId, setSelectedBranchId] = useState<string>(BRANCHES[0].id);
+  const [selectedBranchId] = useState<string>('vieux-fort-branch');
   const [userRole, setUserRole] = useState<'customer' | 'receptionist' | 'teller' | 'manager' | undefined>(undefined);
   const [tellerId, setTellerId] = useState<string>('Teller-1');
 
@@ -65,12 +47,6 @@ const App: React.FC = () => {
     // Load current customer ID from localStorage
     const customer = localStorage.getItem('queue_customer_id');
     if (customer) setCurrentCustomerId(customer);
-    
-    // Load user role and branch selection (don't load from localStorage to show all buttons by default)
-    // const savedRole = localStorage.getItem('queue_user_role') as typeof userRole;
-    // if (savedRole) setUserRole(savedRole);
-    const savedBranch = localStorage.getItem('queue_selected_branch');
-    if (savedBranch) setSelectedBranchId(savedBranch);
   }, []);
 
   // Save tickets to Supabase when they change
@@ -86,8 +62,7 @@ const App: React.FC = () => {
       localStorage.removeItem('queue_customer_id');
     }
     
-    localStorage.setItem('queue_user_role', userRole);
-    localStorage.setItem('queue_selected_branch', selectedBranchId);
+    localStorage.setItem('queue_user_role', userRole || '');
   }, [tickets, currentCustomerId, userRole, selectedBranchId]);
 
   const addTicket = async (
@@ -268,39 +243,17 @@ const App: React.FC = () => {
       )}
 
       {view === 'receptionist' && (
-        <div className="space-y-6">
-          <div className="flex items-center gap-4 mb-4">
-            <select
-              value={selectedBranchId}
-              onChange={(e) => setSelectedBranchId(e.target.value)}
-              className="px-4 py-2 border border-slate-200 rounded-lg"
-            >
-              {BRANCHES.map(branch => (
-                <option key={branch.id} value={branch.id}>{branch.name}</option>
-              ))}
-            </select>
-          </div>
-          <ReceptionDashboard 
-            tickets={tickets} 
-            updateStatus={updateTicketStatus}
-            updateTicket={updateTicket}
-            branch={selectedBranch}
-          />
-        </div>
+        <ReceptionDashboard 
+          tickets={tickets} 
+          updateStatus={updateTicketStatus}
+          updateTicket={updateTicket}
+          branch={selectedBranch}
+        />
       )}
 
       {view === 'teller' && (
         <div className="space-y-6">
           <div className="flex items-center gap-4 mb-4">
-            <select
-              value={selectedBranchId}
-              onChange={(e) => setSelectedBranchId(e.target.value)}
-              className="px-4 py-2 border border-slate-200 rounded-lg"
-            >
-              {BRANCHES.map(branch => (
-                <option key={branch.id} value={branch.id}>{branch.name}</option>
-              ))}
-            </select>
             <input
               type="text"
               value={tellerId}
