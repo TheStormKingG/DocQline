@@ -11,11 +11,15 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children, view, setView, resetAll, userRole }) => {
-  // Show all views for now, but can be filtered by role
+  // Show all views by default (when userRole is undefined)
+  // When userRole is set, filter based on role
   const showCustomer = !userRole || userRole === 'customer';
   const showReception = !userRole || userRole === 'receptionist' || userRole === 'manager';
   const showTeller = !userRole || userRole === 'teller' || userRole === 'manager';
   const showManager = !userRole || userRole === 'manager';
+  
+  // For now, always show all buttons (remove role filtering)
+  const showAllButtons = true;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -34,38 +38,30 @@ export const Layout: React.FC<LayoutProps> = ({ children, view, setView, resetAl
           </div>
           
           <nav className="flex bg-slate-100 p-1 rounded-lg">
-            {showCustomer && (
-              <button 
-                onClick={() => setView('customer')}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${view === 'customer' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-600 hover:text-slate-900'}`}
-              >
-                <User size={16} /> Customer
-              </button>
-            )}
-            {showReception && (
-              <button 
-                onClick={() => setView('receptionist')}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${view === 'receptionist' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-600 hover:text-slate-900'}`}
-              >
-                <ClipboardList size={16} /> Reception
-              </button>
-            )}
-            {showTeller && (
-              <button 
-                onClick={() => setView('teller')}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${view === 'teller' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-600 hover:text-slate-900'}`}
-              >
-                <CreditCard size={16} /> Teller
-              </button>
-            )}
-            {showManager && (
-              <button 
-                onClick={() => setView('manager')}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${view === 'manager' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-600 hover:text-slate-900'}`}
-              >
-                <BarChart3 size={16} /> Manager
-              </button>
-            )}
+            <button 
+              onClick={() => setView('customer')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${view === 'customer' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-600 hover:text-slate-900'}`}
+            >
+              <User size={16} /> Customer
+            </button>
+            <button 
+              onClick={() => setView('receptionist')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${view === 'receptionist' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-600 hover:text-slate-900'}`}
+            >
+              <ClipboardList size={16} /> Reception
+            </button>
+            <button 
+              onClick={() => setView('teller')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${view === 'teller' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-600 hover:text-slate-900'}`}
+            >
+              <CreditCard size={16} /> Teller
+            </button>
+            <button 
+              onClick={() => setView('manager')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${view === 'manager' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-600 hover:text-slate-900'}`}
+            >
+              <BarChart3 size={16} /> Manager
+            </button>
           </nav>
 
           <button 

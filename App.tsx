@@ -49,7 +49,7 @@ const App: React.FC = () => {
   const [currentCustomerId, setCurrentCustomerId] = useState<string | null>(null);
   const [view, setView] = useState<'customer' | 'receptionist' | 'teller' | 'manager'>('customer');
   const [selectedBranchId, setSelectedBranchId] = useState<string>(BRANCHES[0].id);
-  const [userRole, setUserRole] = useState<'customer' | 'receptionist' | 'teller' | 'manager'>('customer');
+  const [userRole, setUserRole] = useState<'customer' | 'receptionist' | 'teller' | 'manager' | undefined>(undefined);
   const [tellerId, setTellerId] = useState<string>('Teller-1');
 
   const selectedBranch = BRANCHES.find(b => b.id === selectedBranchId) || BRANCHES[0];
@@ -66,9 +66,9 @@ const App: React.FC = () => {
     const customer = localStorage.getItem('queue_customer_id');
     if (customer) setCurrentCustomerId(customer);
     
-    // Load user role and branch selection
-    const savedRole = localStorage.getItem('queue_user_role') as typeof userRole;
-    if (savedRole) setUserRole(savedRole);
+    // Load user role and branch selection (don't load from localStorage to show all buttons by default)
+    // const savedRole = localStorage.getItem('queue_user_role') as typeof userRole;
+    // if (savedRole) setUserRole(savedRole);
     const savedBranch = localStorage.getItem('queue_selected_branch');
     if (savedBranch) setSelectedBranchId(savedBranch);
   }, []);
