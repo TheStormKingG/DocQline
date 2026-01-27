@@ -96,38 +96,10 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
           </div>
         </div>
         
-        <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-          {branchTickets.filter(t => t.status !== TicketStatus.SERVED && t.status !== TicketStatus.REMOVED).map(ticket => (
-            <div 
-              key={ticket.id}
-              onClick={() => setSelectedTicket(ticket)}
-              className={`aspect-square rounded-xl flex flex-col items-center justify-center border-2 transition-all cursor-pointer ${
-                ticket.status === TicketStatus.CALLED ? 'bg-orange-50 border-orange-200 text-orange-600' :
-                ticket.status === TicketStatus.IN_TRANSACTION ? 'bg-blue-600 border-blue-600 text-white' :
-                ticket.status === TicketStatus.ARRIVED ? 'bg-green-600 border-green-600 text-white animate-pulse' :
-                'bg-white border-slate-100 text-slate-400 hover:border-slate-300'
-              }`}
-            >
-              <span className="text-xl font-black">{ticket.queueNumber}</span>
-              <span className="text-[10px] uppercase font-bold tracking-tighter opacity-70">
-                {ticket.status === TicketStatus.ARRIVED ? 'Next' : 
-                 ticket.status === TicketStatus.IN_TRANSACTION ? 'In' : 
-                 ticket.status === TicketStatus.CALLED ? 'Called' : 'Waiting'}
-              </span>
-            </div>
-          ))}
-          {/* Empty slots representation */}
-          {Array.from({ length: Math.max(0, 16 - branchTickets.length) }).map((_, i) => (
-            <div key={i} className="aspect-square rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center">
-              <span className="text-slate-200 text-xl font-black">{branchTickets.length + i + 1}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* In Building Section */}
+        {/* In-Building Capacity Grid - 9 Spots */}
         <div className="p-6 bg-white rounded-2xl shadow-sm border border-slate-100">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-slate-400 text-xs font-bold uppercase tracking-widest">In Building ({inBuilding.length})</h3>
+            <h3 className="text-slate-400 text-xs font-bold uppercase tracking-widest">In-Building Capacity ({inBuildingCount}/{maxInBuilding})</h3>
             <div className={`px-3 py-1 rounded-full text-xs font-bold ${
               inBuildingCount >= maxInBuilding 
                 ? 'bg-red-100 text-red-700' 
@@ -138,16 +110,52 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
               {inBuildingCount >= maxInBuilding ? 'AT CAPACITY' : `${maxInBuilding - inBuildingCount} spots available`}
             </div>
           </div>
-          {inBuilding.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
+            {Array.from({ length: maxInBuilding }).map((_, index) => {
+              const spotNumber = index + 1;
+              // Get customer for this spot (sorted by queue number, take first 9)
+              const sortedInBuilding = [...inBuilding].sort((a, b) => a.queueNumber - b.queueNumber);
+              const customerInSpot = sortedInBuilding[index];
+              
+              return (
+                <div
+                  key={index}
+                  onClick={() => customerInSpot && setSelectedTicket(customerInSpot)}
+                  className={`aspect-square rounded-xl flex flex-col items-center justify-center border-2 transition-all ${
+                    customerInSpot 
+                      ? 'bg-green-50 border-green-300 cursor-pointer hover:border-green-400' 
+                      : 'border-dashed border-slate-200 bg-slate-50'
+                  }`}
+                >
+                  {customerInSpot ? (
+                    <>
+                      <span className="text-2xl font-black text-green-700">{customerInSpot.queueNumber}</span>
+                      <span className="text-[10px] uppercase font-bold tracking-tighter text-green-600 mt-1">
+                        {customerInSpot.name.split(' ')[0]}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-slate-300 text-xl font-black">#{spotNumber}</span>
+                      <span className="text-[10px] uppercase font-bold tracking-tighter text-slate-300 mt-1">
+                        Empty
+                      </span>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {inBuilding.length > 0 && (
+            <div className="mt-4 space-y-2">
               {inBuilding.map(t => (
-                <div key={t.id} className="flex items-center justify-between p-3 bg-green-50 rounded-xl border border-green-200">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-green-600 text-white rounded-lg flex items-center justify-center font-bold">
+                <div key={t.id} className="flex items-center justify-between p-2 bg-green-50 rounded-lg border border-green-200">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-green-600 text-white rounded-lg flex items-center justify-center font-bold text-sm">
                       {t.queueNumber}
                     </div>
                     <div>
-                      <p className="font-bold text-green-900">{t.name}</p>
+                      <p className="font-bold text-green-900 text-sm">{t.name}</p>
                       {t.enteredBuildingAt && (
                         <p className="text-xs text-green-600">
                           Entered {new Date(t.enteredBuildingAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -157,18 +165,42 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
                   </div>
                   <button
                     onClick={() => handleMarkLeft(t.id)}
-                    className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-all"
+                    className="p-1.5 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-all"
                     title="Mark as Left"
                   >
-                    <LogOut size={18} />
+                    <LogOut size={16} />
                   </button>
                 </div>
               ))}
             </div>
-          ) : (
-            <p className="text-slate-300 italic text-sm">No customers currently in building.</p>
           )}
         </div>
+
+        {/* Remote Waiting Queue */}
+        <div className="p-6 bg-white rounded-2xl shadow-sm border border-slate-100">
+          <h3 className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-4">
+            Remote Waiting Queue ({remoteWaiting.length})
+          </h3>
+          {remoteWaiting.length > 0 ? (
+            <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+              {remoteWaiting.map(ticket => (
+                <div 
+                  key={ticket.id}
+                  onClick={() => setSelectedTicket(ticket)}
+                  className="aspect-square rounded-xl flex flex-col items-center justify-center border-2 border-slate-200 bg-slate-50 text-slate-400 hover:border-slate-300 hover:bg-slate-100 transition-all cursor-pointer"
+                >
+                  <span className="text-xl font-black">{ticket.queueNumber}</span>
+                  <span className="text-[10px] uppercase font-bold tracking-tighter opacity-70 mt-1">
+                    {ticket.name.split(' ')[0]}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-slate-300 italic text-sm text-center py-8">No customers in remote waiting queue.</p>
+          )}
+        </div>
+
 
         <div className="grid grid-cols-2 gap-4">
           <div className="p-6 bg-white rounded-2xl shadow-sm border border-slate-100">
