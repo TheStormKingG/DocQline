@@ -10,21 +10,19 @@ interface CustomerJoinProps {
 const CustomerJoin: React.FC<CustomerJoinProps> = ({ branches, onJoin }) => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [memberId, setMemberId] = useState('');
-  const [selectedBranchId, setSelectedBranchId] = useState(branches[0]?.id || '');
-  const [serviceCategory, setServiceCategory] = useState<ServiceCategory | undefined>(undefined);
   const [consent, setConsent] = useState(false);
   const [isSimulatingFailure, setIsSimulatingFailure] = useState(false);
 
-  const selectedBranch = branches.find(b => b.id === selectedBranchId);
+  // Use first active branch as default
+  const selectedBranchId = branches.find(b => b.isActive)?.id || branches[0]?.id || '';
   const isValid = name.trim().length > 2 && /^\+?[1-9]\d{1,14}$/.test(phone) && consent && selectedBranchId;
 
   const handleJoin = (channel: CommsChannel) => {
     if (channel === CommsChannel.WHATSAPP && isSimulatingFailure) {
       alert("WhatsApp delivery failed. Switching to SMS fallback...");
-      onJoin(name, phone, CommsChannel.SMS, selectedBranchId, memberId || undefined, serviceCategory);
+      onJoin(name, phone, CommsChannel.SMS, selectedBranchId);
     } else {
-      onJoin(name, phone, channel, selectedBranchId, memberId || undefined, serviceCategory);
+      onJoin(name, phone, channel, selectedBranchId);
     }
   };
 
@@ -82,53 +80,6 @@ const CustomerJoin: React.FC<CustomerJoinProps> = ({ branches, onJoin }) => {
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">
-            Member/Customer ID <span className="text-slate-400 font-normal">(Optional)</span>
-          </label>
-          <input 
-            type="text"
-            value={memberId}
-            onChange={(e) => setMemberId(e.target.value)}
-            placeholder="e.g. MEM-12345"
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">Select Branch</label>
-          <select
-            value={selectedBranchId}
-            onChange={(e) => setSelectedBranchId(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-          >
-            {branches.filter(b => b.isActive).map(branch => (
-              <option key={branch.id} value={branch.id}>
-                {branch.name} - {branch.address}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">
-            Service Category <span className="text-slate-400 font-normal">(Optional)</span>
-          </label>
-          <select
-            value={serviceCategory || ''}
-            onChange={(e) => setServiceCategory(e.target.value ? e.target.value as ServiceCategory : undefined)}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-          >
-            <option value="">Select a service...</option>
-            <option value={ServiceCategory.DEPOSIT}>Deposit</option>
-            <option value={ServiceCategory.WITHDRAWAL}>Withdrawal</option>
-            <option value={ServiceCategory.TRANSFER}>Transfer</option>
-            <option value={ServiceCategory.LOAN}>Loan Services</option>
-            <option value={ServiceCategory.ACCOUNT_OPENING}>Account Opening</option>
-            <option value={ServiceCategory.ACCOUNT_INQUIRY}>Account Inquiry</option>
-            <option value={ServiceCategory.OTHER}>Other</option>
-          </select>
-        </div>
 
         <div className="flex items-start gap-3">
           <input 
