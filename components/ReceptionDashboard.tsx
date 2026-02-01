@@ -72,160 +72,94 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 h-full overflow-hidden">
-      {/* Queue Grid */}
-      <div className="lg:col-span-8 flex flex-col overflow-hidden gap-1.5" style={{ height: '100%' }}>
-        {/* Compact Header - Fixed Height */}
-        <div className="flex items-center justify-between flex-shrink-0" style={{ height: '28px' }}>
-          <div className="flex items-center gap-1.5">
-            <Building2 size={14} className="text-slate-500" />
-            <h2 className="text-sm font-bold">
-              {branch.name}
-              <span className="text-[10px] font-normal text-slate-400 ml-1.5">
-                ({remoteWaiting.length + eligibleForEntry.length + inBuilding.length})
-              </span>
-            </h2>
-          </div>
-          <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 border border-blue-200 rounded">
-            <Users size={12} className="text-blue-600" />
-            <p className="text-xs font-black text-blue-700">
-              {inBuildingCount}/{maxInBuilding}
-            </p>
-          </div>
-        </div>
-        
-        {/* In-Building Capacity Grid - 2 Rows of 5, 2x Bigger */}
-        <div className="bg-white rounded-lg shadow-sm border border-slate-100 flex-shrink-0 p-2" style={{ height: 'calc((100vh - 200px) * 0.30)' }}>
-          <div className="flex items-center justify-between mb-2 h-5">
-            <h3 className="text-slate-400 text-[9px] font-bold uppercase tracking-widest">In-Building ({inBuildingCount}/{maxInBuilding})</h3>
-            <div className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${
-              inBuildingCount >= maxInBuilding 
-                ? 'bg-red-100 text-red-700' 
-                : inBuildingCount >= maxInBuilding * 0.8
-                ? 'bg-yellow-100 text-yellow-700'
-                : 'bg-green-100 text-green-700'
-            }`}>
-              {inBuildingCount >= maxInBuilding ? 'FULL' : `${maxInBuilding - inBuildingCount} open`}
+    <div className="flex flex-col gap-2 h-full overflow-hidden">
+      {/* Top Row: Header, In-Building, and Now Serving */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 flex-shrink-0">
+        {/* Left Side: Header and In-Building */}
+        <div className="lg:col-span-8 flex flex-col gap-1.5">
+          {/* Compact Header - Fixed Height */}
+          <div className="flex items-center justify-between flex-shrink-0" style={{ height: '28px' }}>
+            <div className="flex items-center gap-1.5">
+              <Building2 size={14} className="text-slate-500" />
+              <h2 className="text-sm font-bold">
+                {branch.name}
+                <span className="text-[10px] font-normal text-slate-400 ml-1.5">
+                  ({remoteWaiting.length + eligibleForEntry.length + inBuilding.length})
+                </span>
+              </h2>
+            </div>
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 border border-blue-200 rounded">
+              <Users size={12} className="text-blue-600" />
+              <p className="text-xs font-black text-blue-700">
+                {inBuildingCount}/{maxInBuilding}
+              </p>
             </div>
           </div>
-          <div 
-            className="grid gap-1.5" 
-            style={{ 
-              gridTemplateColumns: 'repeat(5, 1fr)',
-              gridTemplateRows: 'repeat(2, 1fr)',
-              height: 'calc(100% - 25px)',
-              width: '100%'
-            }}
-          >
-            {Array.from({ length: 10 }).map((_, index) => {
-              const spotNumber = index + 1;
-              const sortedInBuilding = [...inBuilding].sort((a, b) => a.queueNumber - b.queueNumber);
-              const customerInSpot = sortedInBuilding[index];
-              const isEmpty = spotNumber > maxInBuilding;
-              
-              return (
-                <div
-                  key={index}
-                  onClick={() => customerInSpot && setSelectedTicket(customerInSpot)}
-                  className={`rounded-md flex flex-col items-center justify-center border-2 transition-all ${
-                    customerInSpot 
-                      ? 'bg-green-50 border-green-300 cursor-pointer hover:border-green-400' 
-                      : 'border-dashed border-slate-200 bg-slate-50'
-                  }`}
-                  style={{ width: '100%', height: '100%', minHeight: 0 }}
-                >
-                  {customerInSpot ? (
-                    <>
-                      <span className="text-lg font-black text-green-700">{customerInSpot.queueNumber}</span>
-                      <span className="text-[10px] uppercase font-bold tracking-tighter text-green-600 mt-1 leading-none">
-                        {customerInSpot.name.split(' ')[0].substring(0, 6)}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-slate-300 text-base font-black">#{spotNumber}</span>
-                      <span className="text-[10px] uppercase font-bold tracking-tighter text-slate-300 mt-1 leading-none">
-                        {isEmpty ? '' : spotNumber === 1 ? '(NEXT)' : 'Empty'}
-                      </span>
-                    </>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Remote Waiting Queue - 5 Rows of 10, 1/3 Size of In-Building */}
-        <div className="bg-white rounded-lg shadow-sm border border-slate-100 flex-1 flex flex-col min-h-0 p-2" style={{ minHeight: 0 }}>
-          <h3 className="text-slate-400 text-[9px] font-bold uppercase tracking-widest mb-1.5 flex-shrink-0">
-            Remote ({remoteWaiting.length})
-          </h3>
-          {remoteWaiting.length > 0 ? (
+          
+          {/* In-Building Capacity Grid - 2 Rows of 5, 2x Bigger */}
+          <div className="bg-white rounded-lg shadow-sm border border-slate-100 flex-shrink-0 p-2" style={{ height: 'calc((100vh - 200px) * 0.30)' }}>
+            <div className="flex items-center justify-between mb-2 h-5">
+              <h3 className="text-slate-400 text-[9px] font-bold uppercase tracking-widest">In-Building ({inBuildingCount}/{maxInBuilding})</h3>
+              <div className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${
+                inBuildingCount >= maxInBuilding 
+                  ? 'bg-red-100 text-red-700' 
+                  : inBuildingCount >= maxInBuilding * 0.8
+                  ? 'bg-yellow-100 text-yellow-700'
+                  : 'bg-green-100 text-green-700'
+              }`}>
+                {inBuildingCount >= maxInBuilding ? 'FULL' : `${maxInBuilding - inBuildingCount} open`}
+              </div>
+            </div>
             <div 
-              className="grid gap-0.5 overflow-y-auto flex-1 min-h-0"
+              className="grid gap-1.5" 
               style={{ 
-                gridTemplateColumns: 'repeat(10, 1fr)',
-                gridTemplateRows: 'repeat(5, 1fr)',
+                gridTemplateColumns: 'repeat(5, 1fr)',
+                gridTemplateRows: 'repeat(2, 1fr)',
+                height: 'calc(100% - 25px)',
                 width: '100%'
               }}
             >
-              {Array.from({ length: 50 }).map((_, index) => {
-                const spotNumber = index + 11; // Start numbering at 11
-                const ticket = remoteWaiting[index];
-                if (!ticket) {
-                  return (
-                    <div 
-                      key={`empty-${index}`}
-                      className="rounded-sm flex flex-col items-center justify-center border border-dashed border-slate-200 bg-slate-50"
-                      style={{ width: '100%', height: '100%', minHeight: 0 }}
-                    >
-                      <span className="text-slate-200 text-[10px] font-black">#{spotNumber}</span>
-                    </div>
-                  );
-                }
+              {Array.from({ length: 10 }).map((_, index) => {
+                const spotNumber = index + 1;
+                const sortedInBuilding = [...inBuilding].sort((a, b) => a.queueNumber - b.queueNumber);
+                const customerInSpot = sortedInBuilding[index];
+                const isEmpty = spotNumber > maxInBuilding;
+                
                 return (
-                  <div 
-                    key={ticket.id}
-                    onClick={() => setSelectedTicket(ticket)}
-                    className="rounded-sm flex flex-col items-center justify-center border border-slate-200 bg-slate-50 text-slate-400 hover:border-slate-300 hover:bg-slate-100 transition-all cursor-pointer"
+                  <div
+                    key={index}
+                    onClick={() => customerInSpot && setSelectedTicket(customerInSpot)}
+                    className={`rounded-md flex flex-col items-center justify-center border-2 transition-all ${
+                      customerInSpot 
+                        ? 'bg-green-50 border-green-300 cursor-pointer hover:border-green-400' 
+                        : 'border-dashed border-slate-200 bg-slate-50'
+                    }`}
                     style={{ width: '100%', height: '100%', minHeight: 0 }}
                   >
-                    <span className="text-[10px] font-black">{ticket.queueNumber}</span>
-                    <span className="text-[6px] uppercase font-bold tracking-tighter opacity-70 mt-0.5 leading-none">
-                      {ticket.name.split(' ')[0].substring(0, 4)}
-                    </span>
+                    {customerInSpot ? (
+                      <>
+                        <span className="text-lg font-black text-green-700">{customerInSpot.queueNumber}</span>
+                        <span className="text-[10px] uppercase font-bold tracking-tighter text-green-600 mt-1 leading-none">
+                          {customerInSpot.name.split(' ')[0].substring(0, 6)}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-slate-300 text-base font-black">#{spotNumber}</span>
+                        <span className="text-[10px] uppercase font-bold tracking-tighter text-slate-300 mt-1 leading-none">
+                          {isEmpty ? '' : spotNumber === 1 ? '(NEXT)' : 'Empty'}
+                        </span>
+                      </>
+                    )}
                   </div>
                 );
               })}
             </div>
-          ) : (
-            <div 
-              className="grid gap-0.5 flex-1"
-              style={{ 
-                gridTemplateColumns: 'repeat(10, 1fr)',
-                gridTemplateRows: 'repeat(5, 1fr)',
-                width: '100%'
-              }}
-            >
-              {Array.from({ length: 50 }).map((_, index) => {
-                const spotNumber = index + 11; // Start numbering at 11
-                return (
-                  <div 
-                    key={`empty-${index}`}
-                    className="rounded-sm flex flex-col items-center justify-center border border-dashed border-slate-200 bg-slate-50"
-                    style={{ width: '100%', height: '100%', minHeight: 0 }}
-                  >
-                    <span className="text-slate-200 text-[10px] font-black">#{spotNumber}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          </div>
         </div>
-      </div>
 
-      {/* Action Sidebar - Dynamic Height */}
-      <div className="lg:col-span-4 flex flex-col gap-1.5" style={{ height: '100%' }}>
+        {/* Action Sidebar - Dynamic Height */}
+        <div className="lg:col-span-4 flex flex-col gap-1.5">
         <div className="bg-slate-900 text-white rounded-xl relative overflow-hidden flex-shrink-0 p-3" style={{ height: 'calc((100vh - 200px) * 0.35)' }}>
           <div className="relative z-10 h-full flex flex-col">
             <h3 className="text-slate-400 text-[9px] font-bold uppercase mb-2 tracking-widest flex-shrink-0">Now Serving</h3>
@@ -286,14 +220,83 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
           <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-blue-600 rounded-full blur-[40px] opacity-20" />
         </div>
 
-        <div className="p-2 bg-blue-50 border border-blue-100 rounded-lg flex-shrink-0">
-          <div className="flex gap-1.5">
-            <Info className="text-blue-500 shrink-0" size={12} />
-            <p className="text-[9px] text-blue-700 leading-tight">
-              <strong>{branch.gracePeriodMinutes}-min</strong> countdown. Polled at 1-min.
-            </p>
+          <div className="p-2 bg-blue-50 border border-blue-100 rounded-lg flex-shrink-0">
+            <div className="flex gap-1.5">
+              <Info className="text-blue-500 shrink-0" size={12} />
+              <p className="text-[9px] text-blue-700 leading-tight">
+                <strong>{branch.gracePeriodMinutes}-min</strong> countdown. Polled at 1-min.
+              </p>
+            </div>
           </div>
         </div>
+      </div>
+
+      {/* Remote Waiting Queue - Full Width Below, 5 Rows of 10 */}
+      <div className="bg-white rounded-lg shadow-sm border border-slate-100 flex-1 flex flex-col min-h-0 p-2" style={{ minHeight: 0, width: '100%' }}>
+        <h3 className="text-slate-400 text-[9px] font-bold uppercase tracking-widest mb-1.5 flex-shrink-0">
+          Remote ({remoteWaiting.length})
+        </h3>
+        {remoteWaiting.length > 0 ? (
+          <div 
+            className="grid gap-0.5 overflow-y-auto flex-1 min-h-0"
+            style={{ 
+              gridTemplateColumns: 'repeat(10, 1fr)',
+              gridTemplateRows: 'repeat(5, 1fr)',
+              width: '100%'
+            }}
+          >
+            {Array.from({ length: 50 }).map((_, index) => {
+              const spotNumber = index + 11; // Start numbering at 11
+              const ticket = remoteWaiting[index];
+              if (!ticket) {
+                return (
+                  <div 
+                    key={`empty-${index}`}
+                    className="rounded-sm flex flex-col items-center justify-center border border-dashed border-slate-200 bg-slate-50"
+                    style={{ width: '100%', height: '100%', minHeight: 0 }}
+                  >
+                    <span className="text-slate-200 text-[10px] font-black">#{spotNumber}</span>
+                  </div>
+                );
+              }
+              return (
+                <div 
+                  key={ticket.id}
+                  onClick={() => setSelectedTicket(ticket)}
+                  className="rounded-sm flex flex-col items-center justify-center border border-slate-200 bg-slate-50 text-slate-400 hover:border-slate-300 hover:bg-slate-100 transition-all cursor-pointer"
+                  style={{ width: '100%', height: '100%', minHeight: 0 }}
+                >
+                  <span className="text-[10px] font-black">{ticket.queueNumber}</span>
+                  <span className="text-[6px] uppercase font-bold tracking-tighter opacity-70 mt-0.5 leading-none">
+                    {ticket.name.split(' ')[0].substring(0, 4)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div 
+            className="grid gap-0.5 flex-1"
+            style={{ 
+              gridTemplateColumns: 'repeat(10, 1fr)',
+              gridTemplateRows: 'repeat(5, 1fr)',
+              width: '100%'
+            }}
+          >
+            {Array.from({ length: 50 }).map((_, index) => {
+              const spotNumber = index + 11; // Start numbering at 11
+              return (
+                <div 
+                  key={`empty-${index}`}
+                  className="rounded-sm flex flex-col items-center justify-center border border-dashed border-slate-200 bg-slate-50"
+                  style={{ width: '100%', height: '100%', minHeight: 0 }}
+                >
+                  <span className="text-slate-200 text-[10px] font-black">#{spotNumber}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Audit Notes Modal */}
