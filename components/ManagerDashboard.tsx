@@ -369,8 +369,7 @@ interface DataViewProps {
 }
 
 const DataView: React.FC<DataViewProps> = ({ selectedDate, setSelectedDate, data }) => {
-  const [showCalendar, setShowCalendar] = useState(false);
-  const calendarRef = useRef<HTMLDivElement>(null);
+  const dateInputRef = useRef<HTMLInputElement>(null);
 
   const formatDateShort = (date: Date): string => {
     return date.toLocaleDateString('en-US', { 
@@ -384,25 +383,11 @@ const DataView: React.FC<DataViewProps> = ({ selectedDate, setSelectedDate, data
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newDate = new Date(e.target.value);
     setSelectedDate(newDate);
-    setShowCalendar(false);
   };
 
-  // Close calendar when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) {
-        setShowCalendar(false);
-      }
-    };
-
-    if (showCalendar) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showCalendar]);
+  const handleButtonClick = () => {
+    dateInputRef.current?.showPicker();
+  };
 
   return (
     <>
@@ -412,25 +397,21 @@ const DataView: React.FC<DataViewProps> = ({ selectedDate, setSelectedDate, data
           <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
             <Clock size={20} /> Peak Hours (8 AM - 4 PM)
           </h3>
-          <div className="relative" ref={calendarRef}>
+          <div className="relative">
+            <input
+              ref={dateInputRef}
+              type="date"
+              value={selectedDate.toISOString().split('T')[0]}
+              onChange={handleDateChange}
+              className="hidden"
+            />
             <button
-              onClick={() => setShowCalendar(!showCalendar)}
+              onClick={handleButtonClick}
               className="px-4 py-2 border border-slate-300 rounded-lg bg-white text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center gap-2"
             >
               <Calendar size={16} />
               {formatDateShort(selectedDate)}
             </button>
-            {showCalendar && (
-              <div className="absolute right-0 top-full mt-2 bg-white border border-slate-300 rounded-lg shadow-lg z-50">
-                <input
-                  type="date"
-                  value={selectedDate.toISOString().split('T')[0]}
-                  onChange={handleDateChange}
-                  className="w-full p-3 border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  autoFocus
-                />
-              </div>
-            )}
           </div>
         </div>
         <PeakHoursLineGraph data={data.peakHours} type="hours" />
