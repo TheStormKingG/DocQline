@@ -287,46 +287,41 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ tickets, branch, on
         {graphView === 'months' && <PeakHoursLineGraph data={analytics.peakMonthsData} type="months" />}
       </div>
 
+      {/* Averages */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <BarChart3 size={20} /> Avg Wait Time
+          </h3>
+          <div className="space-y-2">
+            <p className="text-3xl font-black text-blue-600">{analytics.averages.waitTime.toFixed(1)}</p>
+            <p className="text-sm text-slate-500">minutes</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <BarChart3 size={20} /> Avg Customers Per Day
+          </h3>
+          <div className="space-y-2">
+            <p className="text-3xl font-black text-blue-600">{analytics.averages.customersPerDay.toFixed(1)}</p>
+            <p className="text-sm text-slate-500">customers</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <BarChart3 size={20} /> Avg # No-Shows Per Day
+          </h3>
+          <div className="space-y-2">
+            <p className="text-3xl font-black text-blue-600">{analytics.averages.noShowsPerDay.toFixed(1)}</p>
+            <p className="text-sm text-slate-500">no-shows</p>
+          </div>
+        </div>
+      </div>
+
       {/* Peak Periods */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <TrendingUp size={20} /> Peak Day of Week
-          </h3>
-          <div className="space-y-2">
-            <p className="text-3xl font-black text-blue-600">{analytics.peakDayOfWeek.day}</p>
-            <p className="text-sm text-slate-500">{analytics.peakDayOfWeek.count} customers</p>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <Calendar size={20} /> Peak Week of Month
-          </h3>
-          <div className="space-y-2">
-            <p className="text-3xl font-black text-blue-600">Week {analytics.peakWeekOfMonth.week}</p>
-            <p className="text-sm text-slate-500">
-              {monthNames[analytics.peakWeekOfMonth.month - 1]} {analytics.peakWeekOfMonth.year}
-            </p>
-            <p className="text-sm text-slate-500">{analytics.peakWeekOfMonth.count} customers</p>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <Calendar size={20} /> Peak Month of Quarter
-          </h3>
-          <div className="space-y-2">
-            <p className="text-3xl font-black text-blue-600">
-              {monthNames[analytics.peakMonthOfQuarter.month - 1]}
-            </p>
-            <p className="text-sm text-slate-500">
-              Q{analytics.peakMonthOfQuarter.quarter} {analytics.peakMonthOfQuarter.year}
-            </p>
-            <p className="text-sm text-slate-500">{analytics.peakMonthOfQuarter.count} customers</p>
-          </div>
-        </div>
-
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
           <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
             <Calendar size={20} /> Peak Month of Year
@@ -348,27 +343,6 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ tickets, branch, on
             <p className="text-3xl font-black text-blue-600">Q{analytics.peakQuarterOfYear.quarter}</p>
             <p className="text-sm text-slate-500">{analytics.peakQuarterOfYear.year}</p>
             <p className="text-sm text-slate-500">{analytics.peakQuarterOfYear.count} customers</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Averages */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-        <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-          <BarChart3 size={20} /> Averages
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-4 bg-blue-50 rounded-xl">
-            <p className="text-xs text-slate-500 font-bold uppercase mb-1">Avg Wait Time</p>
-            <p className="text-2xl font-black text-blue-600">{analytics.averages.waitTime.toFixed(1)} min</p>
-          </div>
-          <div className="p-4 bg-blue-50 rounded-xl">
-            <p className="text-xs text-slate-500 font-bold uppercase mb-1">Avg Customers Per Day</p>
-            <p className="text-2xl font-black text-blue-600">{analytics.averages.customersPerDay.toFixed(1)}</p>
-          </div>
-          <div className="p-4 bg-blue-50 rounded-xl">
-            <p className="text-xs text-slate-500 font-bold uppercase mb-1">Avg # No-Shows Per Day</p>
-            <p className="text-2xl font-black text-blue-600">{analytics.averages.noShowsPerDay.toFixed(1)}</p>
           </div>
         </div>
       </div>
