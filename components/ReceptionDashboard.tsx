@@ -145,7 +145,7 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
                     <>
                       <span className="text-slate-300 text-base font-black">#{spotNumber}</span>
                       <span className="text-[10px] uppercase font-bold tracking-tighter text-slate-300 mt-1 leading-none">
-                        {isEmpty ? '' : 'Empty'}
+                        {isEmpty ? '' : spotNumber === 1 ? '(NEXT)' : 'Empty'}
                       </span>
                     </>
                   )}
