@@ -94,9 +94,9 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
           </div>
         </div>
         
-        {/* In-Building Capacity Grid - Fixed Proportional Height */}
-        <div className="bg-white rounded-lg shadow-sm border border-slate-100 flex-shrink-0 p-1.5" style={{ height: 'calc((100vh - 200px) * 0.15)' }}>
-          <div className="flex items-center justify-between mb-1 h-4">
+        {/* In-Building Capacity Grid - 2 Rows of 5, 2x Bigger */}
+        <div className="bg-white rounded-lg shadow-sm border border-slate-100 flex-shrink-0 p-2" style={{ height: 'calc((100vh - 200px) * 0.30)' }}>
+          <div className="flex items-center justify-between mb-2 h-5">
             <h3 className="text-slate-400 text-[9px] font-bold uppercase tracking-widest">In-Building ({inBuildingCount}/{maxInBuilding})</h3>
             <div className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${
               inBuildingCount >= maxInBuilding 
@@ -108,7 +108,7 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
               {inBuildingCount >= maxInBuilding ? 'FULL' : `${maxInBuilding - inBuildingCount} open`}
             </div>
           </div>
-          <div className="grid grid-cols-9 gap-0.5 h-full" style={{ height: 'calc(100% - 20px)' }}>
+          <div className="grid grid-cols-5 gap-1.5 h-full" style={{ height: 'calc(100% - 25px)' }}>
             {Array.from({ length: maxInBuilding }).map((_, index) => {
               const spotNumber = index + 1;
               const sortedInBuilding = [...inBuilding].sort((a, b) => a.queueNumber - b.queueNumber);
@@ -118,7 +118,7 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
                 <div
                   key={index}
                   onClick={() => customerInSpot && setSelectedTicket(customerInSpot)}
-                  className={`rounded-sm flex flex-col items-center justify-center border transition-all ${
+                  className={`rounded-md flex flex-col items-center justify-center border-2 transition-all ${
                     customerInSpot 
                       ? 'bg-green-50 border-green-300 cursor-pointer hover:border-green-400' 
                       : 'border-dashed border-slate-200 bg-slate-50'
@@ -127,16 +127,16 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
                 >
                   {customerInSpot ? (
                     <>
-                      <span className="text-[10px] font-black text-green-700">{customerInSpot.queueNumber}</span>
-                      <span className="text-[6px] uppercase font-bold tracking-tighter text-green-600 mt-0.5 leading-none">
-                        {customerInSpot.name.split(' ')[0].substring(0, 4)}
+                      <span className="text-lg font-black text-green-700">{customerInSpot.queueNumber}</span>
+                      <span className="text-[10px] uppercase font-bold tracking-tighter text-green-600 mt-1 leading-none">
+                        {customerInSpot.name.split(' ')[0].substring(0, 6)}
                       </span>
                     </>
                   ) : (
                     <>
-                      <span className="text-slate-300 text-[9px] font-black">#{spotNumber}</span>
-                      <span className="text-[6px] uppercase font-bold tracking-tighter text-slate-300 mt-0.5 leading-none">
-                        E
+                      <span className="text-slate-300 text-base font-black">#{spotNumber}</span>
+                      <span className="text-[10px] uppercase font-bold tracking-tighter text-slate-300 mt-1 leading-none">
+                        Empty
                       </span>
                     </>
                   )}
