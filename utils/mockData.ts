@@ -92,6 +92,9 @@ export const generateMockTickets = (branchId: string, count: number = 500): Tick
     const transactionStartedAt = joinedAt + (10 + Math.floor(Math.random() * 20)) * 60 * 1000; // 10-30 min wait
     const transactionEndedAt = transactionStartedAt + transactionDuration * 60 * 1000;
     
+    // Randomly mark some tickets as no-shows (about 5% of tickets)
+    const isNoShow = Math.random() < 0.05;
+    
     const ticket: Ticket = {
       id: `mock-${i}-${Date.now()}`,
       queueNumber: queueNumber++,
@@ -106,6 +109,7 @@ export const generateMockTickets = (branchId: string, count: number = 500): Tick
       transactionEndedAt,
       waitTimeMinutes: Math.floor((transactionStartedAt - joinedAt) / 60000),
       memberId: `MEM${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+      isNoShow: isNoShow,
     };
     
     tickets.push(ticket);
