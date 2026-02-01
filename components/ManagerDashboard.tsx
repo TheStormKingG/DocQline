@@ -28,6 +28,8 @@ interface PeakAnalytics {
 
 const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ tickets, branch, onAddMockData }) => {
   const [graphView, setGraphView] = useState<'hours' | 'days' | 'months'>('hours');
+  const [activeTab, setActiveTab] = useState<'data' | 'analytics'>('analytics');
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   
   // Auto-generate mock data if no tickets exist
   useEffect(() => {
@@ -256,12 +258,297 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ tickets, branch, on
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
     'July', 'August', 'September', 'October', 'November', 'December'];
 
+  // Calculate data for selected date
+  const selectedDateData = useMemo(() => {
+    const branchTickets = tickets.filter(t => t.branchId === branch.id);
+    const startOfDay = new Date(selectedDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(selectedDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const dayTickets = branchTickets.filter(t => {
+      const ticketDate = new Date(t.joinedAt);
+      return ticketDate >= startOfDay && ticketDate <= endOfDay;
+    });
+
+    // Peak hours for the day (8am-4pm)
+    const hourCounts: { [hour: number]: number } = {};
+    let totalWaitTime = 0;
+    let noShows = 0;
+
+    dayTickets.forEach(ticket => {
+      const hour = new Date(ticket.joinedAt).getHours();
+      if (hour >= 8 && hour <= 16) {
+        hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+      }
+      if (ticket.waitTimeMinutes !== undefined) {
+        totalWaitTime += ticket.waitTimeMinutes;
+      }
+      if (ticket.isNoShow === true) {
+        noShows++;
+      }
+    });
+
+    const peakHours = [];
+    for (let hour = 8; hour <= 16; hour++) {
+      peakHours.push({
+        hour,
+        count: hourCounts[hour] || 0
+      });
+    }
+
+    return {
+      totalCustomers: dayTickets.length,
+      peakHours,
+      cumulativeWaitTime: totalWaitTime,
+      totalNoShows: noShows
+    };
+  }, [tickets, branch.id, selectedDate]);
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3 mb-6">
-        <BarChart3 size={32} className="text-blue-600" />
-        <h2 className="text-3xl font-black text-slate-800">Analytics Dashboard</h2>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <BarChart3 size={32} className="text-blue-600" />
+          <h2 className="text-3xl font-black text-slate-800">Manager Dashboard</h2>
+        </div>
+        
+        {/* Tabs */}
+        <div className="flex bg-slate-100 p-1 rounded-lg">
+          <button
+            onClick={() => setActiveTab('data')}
+            className={`px-4 py-2 rounded-md font-medium transition-all ${
+              activeTab === 'data'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-slate-600 hover:text-slate-800'
+            }`}
+          >
+            Data
+          </button>
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={`px-4 py-2 rounded-md font-medium transition-all ${
+              activeTab === 'analytics'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-slate-600 hover:text-slate-800'
+            }`}
+          >
+            Analytics
+          </button>
+        </div>
       </div>
+
+      {activeTab === 'data' ? (
+        <DataView 
+          selectedDate={selectedDate}
+          setSelectedDate={setSelectedDate}
+          data={selectedDateData}
+        />
+      ) : (
+        <AnalyticsView 
+          analytics={analytics}
+          graphView={graphView}
+          setGraphView={setGraphView}
+          monthNames={monthNames}
+        />
+      )}
+    </div>
+  );
+};
+
+// Data View Component
+interface DataViewProps {
+  selectedDate: Date;
+  setSelectedDate: (date: Date) => void;
+  data: {
+    totalCustomers: number;
+    peakHours: { hour: number; count: number }[];
+    cumulativeWaitTime: number;
+    totalNoShows: number;
+  };
+}
+
+const DataView: React.FC<DataViewProps> = ({ selectedDate, setSelectedDate, data }) => {
+  const formatHour = (hour: number): string => {
+    if (hour === 12) return '12 PM';
+    if (hour > 12) return `${hour - 12} PM`;
+    return `${hour} AM`;
+  };
+
+  const formatDate = (date: Date): string => {
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  };
+
+  // Simple date picker
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newDate = new Date(e.target.value);
+    setSelectedDate(newDate);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Date Picker */}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+        <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <Calendar size={20} /> Select Date
+        </h3>
+        <div className="flex items-center gap-4">
+          <input
+            type="date"
+            value={selectedDate.toISOString().split('T')[0]}
+            onChange={handleDateChange}
+            className="px-4 py-2 border border-slate-300 rounded-lg bg-white text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+          <p className="text-slate-600">{formatDate(selectedDate)}</p>
+        </div>
+      </div>
+
+      {/* Metrics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <BarChart3 size={20} /> Total Customers
+          </h3>
+          <div className="space-y-2">
+            <p className="text-3xl font-black text-blue-600">{data.totalCustomers}</p>
+            <p className="text-sm text-slate-500">customers</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <Clock size={20} /> Cumulative Wait Time
+          </h3>
+          <div className="space-y-2">
+            <p className="text-3xl font-black text-blue-600">{data.cumulativeWaitTime}</p>
+            <p className="text-sm text-slate-500">minutes</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <BarChart3 size={20} /> Total No-Shows
+          </h3>
+          <div className="space-y-2">
+            <p className="text-3xl font-black text-blue-600">{data.totalNoShows}</p>
+            <p className="text-sm text-slate-500">no-shows</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Peak Hours for Selected Day */}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+        <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <Clock size={20} /> Peak Hours (8 AM - 4 PM)
+        </h3>
+        <PeakHoursLineGraph data={data.peakHours} type="hours" />
+      </div>
+    </div>
+  );
+};
+
+// Analytics View Component
+interface AnalyticsViewProps {
+  analytics: PeakAnalytics;
+  graphView: 'hours' | 'days' | 'months';
+  setGraphView: (view: 'hours' | 'days' | 'months') => void;
+  monthNames: string[];
+}
+
+const AnalyticsView: React.FC<AnalyticsViewProps> = ({ analytics, graphView, setGraphView, monthNames }) => {
+  return (
+    <>
+      {/* Peak Hours/Days/Months Line Graph */}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <Clock size={20} />
+            {graphView === 'hours' && 'Peak Hours (8 AM - 4 PM)'}
+            {graphView === 'days' && 'Peak Day (Mon to Fri)'}
+            {graphView === 'months' && 'Peak Month (Jan to Dec)'}
+          </h3>
+          <select
+            value={graphView}
+            onChange={(e) => setGraphView(e.target.value as 'hours' | 'days' | 'months')}
+            className="px-4 py-2 border border-slate-300 rounded-lg bg-white text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="hours">Peak Hours (8 AM - 4 PM)</option>
+            <option value="days">Peak Day (Mon to Fri)</option>
+            <option value="months">Peak Month (Jan to Dec)</option>
+          </select>
+        </div>
+        {graphView === 'hours' && <PeakHoursLineGraph data={analytics.peakHoursData} type="hours" />}
+        {graphView === 'days' && <PeakHoursLineGraph data={analytics.peakDaysData} type="days" />}
+        {graphView === 'months' && <PeakHoursLineGraph data={analytics.peakMonthsData} type="months" />}
+      </div>
+
+      {/* Averages */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <BarChart3 size={20} /> Avg Wait Time
+          </h3>
+          <div className="space-y-2">
+            <p className="text-3xl font-black text-blue-600">{analytics.averages.waitTime.toFixed(1)}</p>
+            <p className="text-sm text-slate-500">minutes</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <BarChart3 size={20} /> Avg Customers Per Day
+          </h3>
+          <div className="space-y-2">
+            <p className="text-3xl font-black text-blue-600">{analytics.averages.customersPerDay.toFixed(1)}</p>
+            <p className="text-sm text-slate-500">customers</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <BarChart3 size={20} /> Avg # No-Shows Per Day
+          </h3>
+          <div className="space-y-2">
+            <p className="text-3xl font-black text-blue-600">{analytics.averages.noShowsPerDay.toFixed(1)}</p>
+            <p className="text-sm text-slate-500">no-shows</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Peak Periods */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <Calendar size={20} /> Peak Month of Year
+          </h3>
+          <div className="space-y-2">
+            <p className="text-3xl font-black text-blue-600">
+              {monthNames[analytics.peakMonthOfYear.month - 1]}
+            </p>
+            <p className="text-sm text-slate-500">{analytics.peakMonthOfYear.year}</p>
+            <p className="text-sm text-slate-500">{analytics.peakMonthOfYear.count} customers</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <Calendar size={20} /> Peak Quarter of Year
+          </h3>
+          <div className="space-y-2">
+            <p className="text-3xl font-black text-blue-600">Q{analytics.peakQuarterOfYear.quarter}</p>
+            <p className="text-sm text-slate-500">{analytics.peakQuarterOfYear.year}</p>
+            <p className="text-sm text-slate-500">{analytics.peakQuarterOfYear.count} customers</p>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
 
       {/* Peak Hours/Days/Months Line Graph */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
