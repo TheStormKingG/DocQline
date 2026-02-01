@@ -4,6 +4,7 @@ import CustomerJoin from './components/CustomerJoin';
 import CustomerStatus from './components/CustomerStatus';
 import ReceptionDashboard from './components/ReceptionDashboard';
 import TellerUI from './components/TellerUI';
+import ManagerDashboard from './components/ManagerDashboard';
 import { Layout } from './components/Layout';
 import { 
   loadTicketsFromSupabase, 
@@ -564,71 +565,7 @@ const App: React.FC = () => {
       )}
 
       {view === 'manager' && (
-        <div className="space-y-6">
-          <h2 className="text-3xl font-black text-slate-800 mb-6">Manager Dashboard</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <div className="p-6 bg-white rounded-2xl border border-slate-100 shadow-sm">
-              <p className="text-sm text-slate-500 font-bold uppercase mb-2">Total Served</p>
-              <p className="text-3xl font-black text-slate-800">{metrics.totalServed}</p>
-            </div>
-            <div className="p-6 bg-white rounded-2xl border border-slate-100 shadow-sm">
-              <p className="text-sm text-slate-500 font-bold uppercase mb-2">Avg Wait Time</p>
-              <p className="text-3xl font-black text-slate-800">{metrics.averageWaitTime} min</p>
-            </div>
-            <div className="p-6 bg-white rounded-2xl border border-slate-100 shadow-sm">
-              <p className="text-sm text-slate-500 font-bold uppercase mb-2">Avg Transaction</p>
-              <p className="text-3xl font-black text-slate-800">{metrics.averageTransactionTime} min</p>
-            </div>
-            <div className="p-6 bg-white rounded-2xl border border-slate-100 shadow-sm">
-              <p className="text-sm text-slate-500 font-bold uppercase mb-2">No-Shows</p>
-              <p className="text-3xl font-black text-slate-800">{metrics.noShowCount}</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="p-6 bg-white rounded-2xl border border-slate-100 shadow-sm">
-              <h3 className="text-lg font-bold text-slate-800 mb-4">Peak Hours</h3>
-              <div className="space-y-2">
-                {metrics.peakHours.map(({ hour, count }) => (
-                  <div key={hour} className="flex items-center justify-between">
-                    <span className="text-slate-600">{hour}:00</span>
-                    <span className="font-bold text-slate-800">{count} customers</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="p-6 bg-white rounded-2xl border border-slate-100 shadow-sm">
-              <h3 className="text-lg font-bold text-slate-800 mb-4">Service Breakdown</h3>
-              <div className="space-y-2">
-                {metrics.serviceCategoryBreakdown.map(({ category, count }) => (
-                  <div key={category} className="flex items-center justify-between">
-                    <span className="text-slate-600">{category.replace('_', ' ')}</span>
-                    <span className="font-bold text-slate-800">{count}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-6">
-            <button
-              onClick={() => {
-                const data = JSON.stringify(metrics, null, 2);
-                const blob = new Blob([data], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `metrics-${new Date().toISOString().split('T')[0]}.json`;
-                a.click();
-              }}
-              className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all"
-            >
-              Export Metrics (JSON)
-            </button>
-          </div>
-        </div>
+        <ManagerDashboard tickets={tickets} branch={selectedBranch} />
       )}
     </Layout>
   );
