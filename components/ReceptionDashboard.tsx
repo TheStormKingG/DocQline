@@ -94,9 +94,9 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
           </div>
         </div>
         
-        {/* In-Building Capacity Grid - 9 Spots (Ultra-Compact) */}
-        <div className="p-2 bg-white rounded-lg shadow-sm border border-slate-100">
-          <div className="flex items-center justify-between mb-1.5">
+        {/* In-Building Capacity Grid - 9 Spots (66% Smaller) */}
+        <div className="p-1.5 bg-white rounded-lg shadow-sm border border-slate-100">
+          <div className="flex items-center justify-between mb-1">
             <h3 className="text-slate-400 text-[9px] font-bold uppercase tracking-widest">In-Building ({inBuildingCount}/{maxInBuilding})</h3>
             <div className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${
               inBuildingCount >= maxInBuilding 
@@ -108,7 +108,7 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
               {inBuildingCount >= maxInBuilding ? 'FULL' : `${maxInBuilding - inBuildingCount} open`}
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-1.5">
+          <div className="grid grid-cols-9 gap-0.5">
             {Array.from({ length: maxInBuilding }).map((_, index) => {
               const spotNumber = index + 1;
               const sortedInBuilding = [...inBuilding].sort((a, b) => a.queueNumber - b.queueNumber);
@@ -118,7 +118,7 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
                 <div
                   key={index}
                   onClick={() => customerInSpot && setSelectedTicket(customerInSpot)}
-                  className={`aspect-square rounded-md flex flex-col items-center justify-center border-2 transition-all ${
+                  className={`aspect-square rounded-sm flex flex-col items-center justify-center border transition-all ${
                     customerInSpot 
                       ? 'bg-green-50 border-green-300 cursor-pointer hover:border-green-400' 
                       : 'border-dashed border-slate-200 bg-slate-50'
@@ -126,16 +126,16 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
                 >
                   {customerInSpot ? (
                     <>
-                      <span className="text-sm font-black text-green-700">{customerInSpot.queueNumber}</span>
-                      <span className="text-[8px] uppercase font-bold tracking-tighter text-green-600 mt-0.5">
-                        {customerInSpot.name.split(' ')[0].substring(0, 6)}
+                      <span className="text-[10px] font-black text-green-700">{customerInSpot.queueNumber}</span>
+                      <span className="text-[6px] uppercase font-bold tracking-tighter text-green-600 mt-0.5 leading-none">
+                        {customerInSpot.name.split(' ')[0].substring(0, 4)}
                       </span>
                     </>
                   ) : (
                     <>
-                      <span className="text-slate-300 text-xs font-black">#{spotNumber}</span>
-                      <span className="text-[8px] uppercase font-bold tracking-tighter text-slate-300 mt-0.5">
-                        Empty
+                      <span className="text-slate-300 text-[9px] font-black">#{spotNumber}</span>
+                      <span className="text-[6px] uppercase font-bold tracking-tighter text-slate-300 mt-0.5 leading-none">
+                        E
                       </span>
                     </>
                   )}
