@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Ticket, TicketStatus, BranchConfig } from '../types';
-import { UserCheck, UserX, ArrowRight, Info, FileText, Building2, LogIn, LogOut, Users } from 'lucide-react';
+import { UserCheck, UserX, ArrowRight, FileText, LogIn, LogOut, Users } from 'lucide-react';
 
 interface ReceptionDashboardProps {
   tickets: Ticket[];
@@ -113,7 +113,7 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
                         <span className="text-lg font-black text-green-700">{customerInSpot.queueNumber}</span>
                         <span className="text-[10px] uppercase font-bold tracking-tighter text-green-600 mt-1 leading-none">
                           {customerInSpot.name.split(' ')[0].substring(0, 6)}
-                        </span>
+                </span>
                       </>
                     ) : (
                       <>
@@ -122,13 +122,13 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
                           {isEmpty ? '' : spotNumber === 1 ? '(NEXT)' : 'Empty'}
                         </span>
                       </>
-                    )}
-                  </div>
+            )}
+          </div>
                 );
               })}
-            </div>
           </div>
         </div>
+      </div>
 
         {/* Action Sidebar - Dynamic Height */}
         <div className="lg:col-span-4 flex flex-col gap-1.5">
@@ -192,14 +192,6 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
           <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-blue-600 rounded-full blur-[40px] opacity-20" />
         </div>
 
-          <div className="p-2 bg-blue-50 border border-blue-100 rounded-lg flex-shrink-0">
-            <div className="flex gap-1.5">
-              <Info className="text-blue-500 shrink-0" size={12} />
-              <p className="text-[9px] text-blue-700 leading-tight">
-                <strong>{branch.gracePeriodMinutes}-min</strong> countdown. Polled at 1-min.
-              </p>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -293,7 +285,7 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
               rows={4}
             />
             
-            <div className="flex gap-3">
+          <div className="flex gap-3">
               <button
                 onClick={handleAddAuditNote}
                 disabled={!auditNote.trim()}
