@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useMemo, useEffect, useState, useRef } from 'react';
 import { Ticket, BranchConfig } from '../types';
 import { BarChart3, TrendingUp, Calendar, Clock } from 'lucide-react';
 import { generateMockTickets } from '../utils/mockData';
@@ -369,16 +369,7 @@ interface DataViewProps {
 }
 
 const DataView: React.FC<DataViewProps> = ({ selectedDate, setSelectedDate, data }) => {
-  const [showCalendar, setShowCalendar] = useState(false);
-
-  const formatDate = (date: Date): string => {
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-  };
+  const dateInputRef = useRef<HTMLInputElement>(null);
 
   const formatDateShort = (date: Date): string => {
     return date.toLocaleDateString('en-US', { 
@@ -392,7 +383,10 @@ const DataView: React.FC<DataViewProps> = ({ selectedDate, setSelectedDate, data
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newDate = new Date(e.target.value);
     setSelectedDate(newDate);
-    setShowCalendar(false);
+  };
+
+  const handleButtonClick = () => {
+    dateInputRef.current?.showPicker();
   };
 
   return (
@@ -404,25 +398,20 @@ const DataView: React.FC<DataViewProps> = ({ selectedDate, setSelectedDate, data
             <Clock size={20} /> Peak Hours (8 AM - 4 PM)
           </h3>
           <div className="relative">
+            <input
+              ref={dateInputRef}
+              type="date"
+              value={selectedDate.toISOString().split('T')[0]}
+              onChange={handleDateChange}
+              className="hidden"
+            />
             <button
-              onClick={() => setShowCalendar(!showCalendar)}
+              onClick={handleButtonClick}
               className="px-4 py-2 border border-slate-300 rounded-lg bg-white text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center gap-2"
             >
               <Calendar size={16} />
               {formatDateShort(selectedDate)}
             </button>
-            {showCalendar && (
-              <div className="absolute right-0 mt-2 bg-white border border-slate-300 rounded-lg shadow-lg z-10 p-4">
-                <input
-                  type="date"
-                  value={selectedDate.toISOString().split('T')[0]}
-                  onChange={handleDateChange}
-                  className="px-4 py-2 border border-slate-300 rounded-lg bg-white text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  autoFocus
-                />
-                <p className="text-xs text-slate-500 mt-2">{formatDate(selectedDate)}</p>
-              </div>
-            )}
           </div>
         </div>
         <PeakHoursLineGraph data={data.peakHours} type="hours" />
