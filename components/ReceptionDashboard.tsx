@@ -108,11 +108,12 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
               {inBuildingCount >= maxInBuilding ? 'FULL' : `${maxInBuilding - inBuildingCount} open`}
             </div>
           </div>
-          <div className="grid grid-cols-5 grid-rows-2 gap-1.5 h-full" style={{ height: 'calc(100% - 25px)' }}>
-            {Array.from({ length: maxInBuilding }).map((_, index) => {
+          <div className="grid grid-cols-5 gap-1.5 h-full" style={{ height: 'calc(100% - 25px)', gridTemplateRows: 'repeat(2, 1fr)' }}>
+            {Array.from({ length: 10 }).map((_, index) => {
               const spotNumber = index + 1;
               const sortedInBuilding = [...inBuilding].sort((a, b) => a.queueNumber - b.queueNumber);
               const customerInSpot = sortedInBuilding[index];
+              const isEmpty = spotNumber > maxInBuilding;
               
               return (
                 <div
@@ -136,7 +137,7 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
                     <>
                       <span className="text-slate-300 text-base font-black">#{spotNumber}</span>
                       <span className="text-[10px] uppercase font-bold tracking-tighter text-slate-300 mt-1 leading-none">
-                        Empty
+                        {isEmpty ? '' : 'Empty'}
                       </span>
                     </>
                   )}
