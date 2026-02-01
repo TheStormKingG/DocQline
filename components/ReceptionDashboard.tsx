@@ -81,6 +81,17 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
           <div className="bg-white rounded-lg shadow-sm border border-slate-100 flex-shrink-0 p-2" style={{ height: 'calc((100vh - 200px) * 0.30)' }}>
             <div className="flex items-center justify-between mb-2 h-5">
               <h3 className="text-slate-400 text-[9px] font-bold uppercase tracking-widest">In-Building ({inBuildingCount}/10)</h3>
+              <button
+                disabled={!nextUp || inBuildingCount >= maxInBuilding}
+                onClick={() => {
+                  if (nextUp && inBuildingCount < maxInBuilding) {
+                    updateStatus(nextUp.id, TicketStatus.ELIGIBLE_FOR_ENTRY, 'reception', 'Called in from remote by reception');
+                  }
+                }}
+                className="px-2 py-1 bg-blue-600 text-white rounded text-[9px] font-bold hover:bg-blue-700 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
+              >
+                Call in Next Remote Member <ArrowRight size={10} />
+              </button>
             </div>
             <div 
               className="grid gap-1.5" 
@@ -157,36 +168,6 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
                   <p className="text-slate-500 italic text-[9px]">No active service</p>
                 </>
               )}
-            </div>
-            
-            <div className="mt-auto pt-2 border-t border-slate-800 flex-shrink-0">
-              <button 
-                disabled={inTransaction.length === 0}
-                onClick={async () => {
-                  if (inTransaction.length > 0) {
-                    // Complete current transaction
-                    await updateStatus(inTransaction[0].id, TicketStatus.COMPLETED, 'reception', 'Completed by reception');
-                    // Call next customer if available
-                    // First check for someone already in building (ARRIVED or IN_BUILDING)
-                    const nextInBuilding = branchTickets.find(t => 
-                      (t.status === TicketStatus.ARRIVED || t.status === TicketStatus.IN_BUILDING) &&
-                      t.id !== inTransaction[0].id
-                    );
-                    if (nextInBuilding) {
-                      await updateStatus(nextInBuilding.id, TicketStatus.IN_SERVICE, 'reception', 'Called to service by reception');
-                    } else if (confirmedNext) {
-                      // Someone eligible for entry
-                      await updateStatus(confirmedNext.id, TicketStatus.IN_SERVICE, 'reception', 'Called to service by reception');
-                    } else if (nextUp && inBuildingCount < maxInBuilding) {
-                      // Make next remote customer eligible
-                      await updateStatus(nextUp.id, TicketStatus.ELIGIBLE_FOR_ENTRY, 'reception', 'Made eligible by reception');
-                    }
-                  }
-                }}
-                className="w-full py-2 bg-white text-slate-900 rounded-lg font-bold flex items-center justify-center gap-1.5 hover:bg-slate-100 transition-all disabled:opacity-30 text-xs"
-              >
-                Complete + Call Next <ArrowRight size={12} />
-              </button>
             </div>
           </div>
           <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-blue-600 rounded-full blur-[40px] opacity-20" />
