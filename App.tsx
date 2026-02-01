@@ -23,7 +23,7 @@ const BRANCHES: BranchConfig[] = [
     avgTransactionTime: 7,
     gracePeriodMinutes: 10,
     isPaused: false,
-    maxInBuilding: 9,
+    maxInBuilding: 10,
     excludeInServiceFromCapacity: false // Count IN_SERVICE as part of capacity
   }
 ];
@@ -75,6 +75,105 @@ const App: React.FC = () => {
     }
   };
 
+  // Helper: Reorder queue numbers for a branch (used when bumping customers)
+  const reorderQueueNumbers = async (branchId: string) => {
+    const branchTickets = tickets
+      .filter(t => t.branchId === branchId)
+      .sort((a, b) => a.queueNumber - b.queueNumber);
+    
+    // Update queue numbers sequentially
+    const updates = branchTickets.map((ticket, index) => ({
+      id: ticket.id,
+      queueNumber: index + 1
+    }));
+    
+    // Save all updates
+    for (const update of updates) {
+      await updateTicketInSupabase(update.id, { queueNumber: update.queueNumber });
+    }
+    
+    setTickets(prev => prev.map(t => {
+      const update = updates.find(u => u.id === t.id);
+      return update ? { ...t, queueNumber: update.queueNumber } : t;
+    }));
+  };
+
+  // Helper: Bump customer down 4 spaces if they don't confirm entry within grace period
+  const checkGracePeriodExpiry = async (branchId: string) => {
+    const branch = BRANCHES.find(b => b.id === branchId) || BRANCHES[0];
+    const branchTickets = tickets.filter(t => t.branchId === branchId);
+    const eligibleCustomers = branchTickets.filter(t => 
+      t.status === TicketStatus.ELIGIBLE_FOR_ENTRY && t.eligibleForEntryAt
+    );
+    
+    const gracePeriodMs = branch.gracePeriodMinutes * 60 * 1000;
+    const now = Date.now();
+    
+    for (const customer of eligibleCustomers) {
+      if (customer.eligibleForEntryAt && (now - customer.eligibleForEntryAt) > gracePeriodMs) {
+        // Grace period expired - bump down 4 spaces
+        const currentQueueNum = customer.queueNumber;
+        const newQueueNum = currentQueueNum + 4;
+        
+        // Find the ticket that should be at newQueueNum and swap
+        const targetTicket = branchTickets.find(t => t.queueNumber === newQueueNum);
+        
+        if (targetTicket) {
+          // Swap queue numbers
+          await updateTicketInSupabase(customer.id, { queueNumber: newQueueNum });
+          await updateTicketInSupabase(targetTicket.id, { queueNumber: currentQueueNum });
+          
+          // Move customer back to REMOTE_WAITING
+          await updateTicketInSupabase(customer.id, {
+            status: TicketStatus.REMOTE_WAITING,
+            eligibleForEntryAt: undefined,
+            statusHistory: addStatusTransition(
+              customer,
+              TicketStatus.ELIGIBLE_FOR_ENTRY,
+              TicketStatus.REMOTE_WAITING,
+              'system',
+              'Grace period expired - bumped down 4 spaces'
+            )
+          });
+          
+          setTickets(prev => prev.map(t => {
+            if (t.id === customer.id) {
+              return { ...t, queueNumber: newQueueNum, status: TicketStatus.REMOTE_WAITING, eligibleForEntryAt: undefined };
+            }
+            if (t.id === targetTicket.id) {
+              return { ...t, queueNumber: currentQueueNum };
+            }
+            return t;
+          }));
+        } else {
+          // No ticket at target position, just move to end
+          const maxQueueNum = Math.max(...branchTickets.map(t => t.queueNumber));
+          await updateTicketInSupabase(customer.id, {
+            queueNumber: maxQueueNum + 1,
+            status: TicketStatus.REMOTE_WAITING,
+            eligibleForEntryAt: undefined,
+            statusHistory: addStatusTransition(
+              customer,
+              TicketStatus.ELIGIBLE_FOR_ENTRY,
+              TicketStatus.REMOTE_WAITING,
+              'system',
+              'Grace period expired - moved to end of queue'
+            )
+          });
+          
+          setTickets(prev => prev.map(t => 
+            t.id === customer.id 
+              ? { ...t, queueNumber: maxQueueNum + 1, status: TicketStatus.REMOTE_WAITING, eligibleForEntryAt: undefined }
+              : t
+          ));
+        }
+        
+        // Reorder all queue numbers to be sequential
+        await reorderQueueNumbers(branchId);
+      }
+    }
+  };
+
   // Helper: Promote next remote customer to eligible for entry
   const promoteNextRemoteCustomer = async (branchId: string) => {
     const branchTickets = tickets.filter(t => t.branchId === branchId);
@@ -85,32 +184,36 @@ const App: React.FC = () => {
     if (remoteWaiting.length > 0) {
       const nextCustomer = remoteWaiting[0];
       const currentCount = getInBuildingCount(branchId);
-      const positionInside = currentCount + 1;
+      const maxCapacity = selectedBranch.maxInBuilding; // Should be 10
       
-      // Update status to ELIGIBLE_FOR_ENTRY
-      const updates: Partial<Ticket> = {
-        status: TicketStatus.ELIGIBLE_FOR_ENTRY,
-        eligibleForEntryAt: Date.now(),
-        statusHistory: addStatusTransition(
+      // Only promote if there's space (when someone moves from position #10 to #9, or leaves)
+      // The customer being promoted will become position #10 in the building
+      if (currentCount < maxCapacity) {
+        // Update status to ELIGIBLE_FOR_ENTRY
+        const updates: Partial<Ticket> = {
+          status: TicketStatus.ELIGIBLE_FOR_ENTRY,
+          eligibleForEntryAt: Date.now(),
+          statusHistory: addStatusTransition(
+            nextCustomer,
+            nextCustomer.status,
+            TicketStatus.ELIGIBLE_FOR_ENTRY,
+            'system',
+            'Promoted to position #10 - eligible for entry'
+          )
+        };
+        
+        await updateTicketInSupabase(nextCustomer.id, updates);
+        
+        setTickets(prev => prev.map(t => 
+          t.id === nextCustomer.id ? { ...t, ...updates } : t
+        ));
+        
+        // Send notification: "You are now #10 and can enter the building"
+        await sendNotification(
           nextCustomer,
-          nextCustomer.status,
-          TicketStatus.ELIGIBLE_FOR_ENTRY,
-          'system',
-          `Capacity opened (${currentCount}→${currentCount + 1})`
-        )
-      };
-      
-      await updateTicketInSupabase(nextCustomer.id, updates);
-      
-      setTickets(prev => prev.map(t => 
-        t.id === nextCustomer.id ? { ...t, ...updates } : t
-      ));
-      
-      // Send notification
-      await sendNotification(
-        nextCustomer,
-        `You may enter now; you are now #${positionInside} inside.`
-      );
+          `You are now #10 and can enter the building. You have 10 minutes to confirm entry or you will be moved back in the queue.`
+        );
+      }
     }
   };
 
@@ -142,6 +245,15 @@ const App: React.FC = () => {
     
     localStorage.setItem('queue_user_role', userRole || '');
   }, [tickets, currentCustomerId, userRole, selectedBranchId]);
+
+  // Check grace period expiry every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      checkGracePeriodExpiry(selectedBranchId);
+    }, 30000); // Check every 30 seconds
+    
+    return () => clearInterval(interval);
+  }, [tickets, selectedBranchId]);
 
   const addTicket = async (
     name: string, 
@@ -296,10 +408,25 @@ const App: React.FC = () => {
     });
   };
 
+  const handleConfirmInBuilding = async (id: string) => {
+    const ticket = tickets.find(t => t.id === id);
+    if (!ticket || ticket.status !== TicketStatus.ELIGIBLE_FOR_ENTRY) return;
+    
+    // Check capacity before confirming
+    const currentCount = getInBuildingCount(ticket.branchId);
+    if (currentCount >= selectedBranch.maxInBuilding) {
+      alert(`⚠️ Building at capacity (${currentCount}/${selectedBranch.maxInBuilding}). Please wait.`);
+      return;
+    }
+    
+    // Update to IN_BUILDING
+    await updateTicketStatus(id, TicketStatus.IN_BUILDING, 'customer', 'Customer confirmed entry via app');
+  };
+
   const submitFeedback = async (id: string, stars: number) => {
     // Update in Supabase (with localStorage fallback)
     await updateTicketInSupabase(id, { feedbackStars: stars });
-    
+
     setTickets(prev => prev.map(t => t.id === id ? { ...t, feedbackStars: stars } : t));
   };
 
@@ -398,6 +525,7 @@ const App: React.FC = () => {
             branch={selectedBranch} 
             onCancel={() => setCurrentCustomerId(null)}
             onSubmitFeedback={submitFeedback}
+            onConfirmInBuilding={handleConfirmInBuilding}
           />
         )
       )}

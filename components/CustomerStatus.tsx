@@ -8,9 +8,10 @@ interface CustomerStatusProps {
   branch: BranchConfig;
   onCancel: () => void;
   onSubmitFeedback: (id: string, stars: number) => void;
+  onConfirmInBuilding?: (id: string) => void;
 }
 
-const CustomerStatus: React.FC<CustomerStatusProps> = ({ ticket, allTickets, branch, onCancel, onSubmitFeedback }) => {
+const CustomerStatus: React.FC<CustomerStatusProps> = ({ ticket, allTickets, branch, onCancel, onSubmitFeedback, onConfirmInBuilding }) => {
   const gracePeriodSeconds = branch.gracePeriodMinutes * 60;
   const [timeLeft, setTimeLeft] = useState(gracePeriodSeconds);
   const [showPoll, setShowPoll] = useState(false);
@@ -27,15 +28,31 @@ const CustomerStatus: React.FC<CustomerStatusProps> = ({ ticket, allTickets, bra
   const peopleAhead = sortedTickets.findIndex(t => t.id === ticket.id);
   const eta = (peopleAhead + 1) * branch.avgTransactionTime;
 
-  // Handle countdown if status is CALLED or ELIGIBLE_FOR_ENTRY
+  // Handle countdown if status is ELIGIBLE_FOR_ENTRY (10 minute grace period)
   useEffect(() => {
     let timer: ReturnType<typeof setInterval>;
-    const isCalled = ticket.status === TicketStatus.CALLED || ticket.status === TicketStatus.ELIGIBLE_FOR_ENTRY;
-    if (isCalled && timeLeft > 0) {
+    if (ticket.status === TicketStatus.ELIGIBLE_FOR_ENTRY && ticket.eligibleForEntryAt) {
+      const elapsed = Math.floor((Date.now() - ticket.eligibleForEntryAt) / 1000);
+      const remaining = gracePeriodSeconds - elapsed;
+      if (remaining > 0) {
+        setTimeLeft(remaining);
+        timer = setInterval(() => {
+          setTimeLeft(prev => {
+            const next = prev - 1;
+            if (next <= 0) {
+              // Grace period expired - will be handled by App.tsx checkGracePeriodExpiry
+              return 0;
+            }
+            return next;
+          });
+        }, 1000);
+      } else {
+        setTimeLeft(0);
+      }
+    } else if (ticket.status === TicketStatus.CALLED && timeLeft > 0) {
       timer = setInterval(() => {
         setTimeLeft(prev => {
           const next = prev - 1;
-          // Trigger poll at 1 minute (60 seconds) before expiration
           const oneMinuteBefore = branch.gracePeriodMinutes * 60 - 60;
           if (next === oneMinuteBefore) setShowPoll(true);
           return next;
@@ -43,7 +60,7 @@ const CustomerStatus: React.FC<CustomerStatusProps> = ({ ticket, allTickets, bra
       }, 1000);
     }
     return () => clearInterval(timer);
-  }, [ticket.status, timeLeft, branch.gracePeriodMinutes]);
+  }, [ticket.status, ticket.eligibleForEntryAt, timeLeft, branch.gracePeriodMinutes, gracePeriodSeconds]);
 
   // Determine if customer is called/eligible
   const isCalled = ticket.status === TicketStatus.CALLED || ticket.status === TicketStatus.ELIGIBLE_FOR_ENTRY;
@@ -119,10 +136,13 @@ const CustomerStatus: React.FC<CustomerStatusProps> = ({ ticket, allTickets, bra
           {isCalled ? (
             <div className="mt-6 bg-white/10 rounded-xl p-4 border border-white/20">
               <p className="text-sm font-bold">
-                {ticket.status === TicketStatus.ELIGIBLE_FOR_ENTRY ? 'YOU MAY ENTER NOW' : 'PLEASE ARRIVE AT COUNTER'}
+                {ticket.status === TicketStatus.ELIGIBLE_FOR_ENTRY ? 'YOU ARE NOW #10 - YOU MAY ENTER' : 'PLEASE ARRIVE AT COUNTER'}
               </p>
               {ticket.status === TicketStatus.ELIGIBLE_FOR_ENTRY ? (
-                <p className="text-lg mt-1">You are now eligible to enter the building</p>
+                <>
+                  <p className="text-lg mt-1">You have 10 minutes to confirm entry</p>
+                  <p className="text-3xl font-mono mt-2">{formatTime(timeLeft)}</p>
+                </>
               ) : (
                 <p className="text-3xl font-mono mt-1">{formatTime(timeLeft)}</p>
               )}
@@ -170,9 +190,18 @@ const CustomerStatus: React.FC<CustomerStatusProps> = ({ ticket, allTickets, bra
             </div>
           )}
 
-          <button className="w-full py-4 border-2 border-slate-100 rounded-xl text-slate-600 font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
-            <Bell size={18} /> Notify me when I'm next
-          </button>
+          {ticket.status === TicketStatus.ELIGIBLE_FOR_ENTRY && onConfirmInBuilding ? (
+            <button 
+              onClick={() => onConfirmInBuilding(ticket.id)}
+              className="w-full py-4 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition-all flex items-center justify-center gap-2"
+            >
+              <Building2 size={18} /> Confirm In-Building Status
+            </button>
+          ) : (
+            <button className="w-full py-4 border-2 border-slate-100 rounded-xl text-slate-600 font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
+              <Bell size={18} /> Notify me when I'm next
+            </button>
+          )}
         </div>
       </div>
 

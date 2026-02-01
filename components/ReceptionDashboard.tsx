@@ -81,17 +81,6 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
           <div className="bg-white rounded-lg shadow-sm border border-slate-100 flex-shrink-0 p-2" style={{ height: 'calc((100vh - 200px) * 0.30)' }}>
             <div className="flex items-center justify-between mb-2 h-5">
               <h3 className="text-slate-400 text-[9px] font-bold uppercase tracking-widest">In-Building ({inBuildingCount}/10)</h3>
-              <button
-                disabled={!nextUp || inBuildingCount >= maxInBuilding}
-                onClick={() => {
-                  if (nextUp && inBuildingCount < maxInBuilding) {
-                    updateStatus(nextUp.id, TicketStatus.ELIGIBLE_FOR_ENTRY, 'reception', 'Called in from remote by reception');
-                  }
-                }}
-                className="px-2 py-1 bg-blue-600 text-white rounded text-[9px] font-bold hover:bg-blue-700 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
-              >
-                Call in Next Remote Member <ArrowRight size={10} />
-              </button>
             </div>
             <div 
               className="grid gap-1.5" 
