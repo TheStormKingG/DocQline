@@ -161,17 +161,25 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
             Remote ({remoteWaiting.length})
           </h3>
           {remoteWaiting.length > 0 ? (
-            <div className="grid grid-cols-10 grid-rows-5 gap-0.5 overflow-y-auto flex-1 min-h-0">
+            <div 
+              className="grid gap-0.5 overflow-y-auto flex-1 min-h-0"
+              style={{ 
+                gridTemplateColumns: 'repeat(10, 1fr)',
+                gridTemplateRows: 'repeat(5, 1fr)',
+                width: '100%'
+              }}
+            >
               {Array.from({ length: 50 }).map((_, index) => {
+                const spotNumber = index + 11; // Start numbering at 11
                 const ticket = remoteWaiting[index];
                 if (!ticket) {
                   return (
                     <div 
                       key={`empty-${index}`}
                       className="rounded-sm flex flex-col items-center justify-center border border-dashed border-slate-200 bg-slate-50"
-                      style={{ aspectRatio: '1' }}
+                      style={{ width: '100%', height: '100%', minHeight: 0 }}
                     >
-                      <span className="text-slate-200 text-[10px] font-black">#{index + 1}</span>
+                      <span className="text-slate-200 text-[10px] font-black">#{spotNumber}</span>
                     </div>
                   );
                 }
@@ -180,7 +188,7 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
                     key={ticket.id}
                     onClick={() => setSelectedTicket(ticket)}
                     className="rounded-sm flex flex-col items-center justify-center border border-slate-200 bg-slate-50 text-slate-400 hover:border-slate-300 hover:bg-slate-100 transition-all cursor-pointer"
-                    style={{ aspectRatio: '1' }}
+                    style={{ width: '100%', height: '100%', minHeight: 0 }}
                   >
                     <span className="text-[10px] font-black">{ticket.queueNumber}</span>
                     <span className="text-[6px] uppercase font-bold tracking-tighter opacity-70 mt-0.5 leading-none">
@@ -191,16 +199,26 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
               })}
             </div>
           ) : (
-            <div className="grid grid-cols-10 grid-rows-5 gap-0.5 flex-1">
-              {Array.from({ length: 50 }).map((_, index) => (
-                <div 
-                  key={`empty-${index}`}
-                  className="rounded-sm flex flex-col items-center justify-center border border-dashed border-slate-200 bg-slate-50"
-                  style={{ aspectRatio: '1' }}
-                >
-                  <span className="text-slate-200 text-[10px] font-black">#{index + 1}</span>
-                </div>
-              ))}
+            <div 
+              className="grid gap-0.5 flex-1"
+              style={{ 
+                gridTemplateColumns: 'repeat(10, 1fr)',
+                gridTemplateRows: 'repeat(5, 1fr)',
+                width: '100%'
+              }}
+            >
+              {Array.from({ length: 50 }).map((_, index) => {
+                const spotNumber = index + 11; // Start numbering at 11
+                return (
+                  <div 
+                    key={`empty-${index}`}
+                    className="rounded-sm flex flex-col items-center justify-center border border-dashed border-slate-200 bg-slate-50"
+                    style={{ width: '100%', height: '100%', minHeight: 0 }}
+                  >
+                    <span className="text-slate-200 text-[10px] font-black">#{spotNumber}</span>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
