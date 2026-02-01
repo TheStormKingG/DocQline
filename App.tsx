@@ -387,7 +387,7 @@ const App: React.FC = () => {
   const metrics = calculateMetrics(selectedBranchId);
 
   return (
-    <Layout view={view} setView={setView} resetAll={resetAll} userRole={userRole}>
+    <Layout view={view} setView={setView} resetAll={resetAll} userRole={userRole} branchName={selectedBranch.name}>
       {view === 'customer' && (
         !currentTicket ? (
           <CustomerJoin branches={BRANCHES.filter(b => !b.isPaused)} onJoin={addTicket} />

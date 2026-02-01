@@ -81,34 +81,13 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
           <div className="flex items-center justify-between flex-shrink-0" style={{ height: '28px' }}>
             <div className="flex items-center gap-1.5">
               <Building2 size={14} className="text-slate-500" />
-              <h2 className="text-sm font-bold">
-                {branch.name}
-                <span className="text-[10px] font-normal text-slate-400 ml-1.5">
-                  ({remoteWaiting.length + eligibleForEntry.length + inBuilding.length})
-                </span>
-              </h2>
-            </div>
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 border border-blue-200 rounded">
-              <Users size={12} className="text-blue-600" />
-              <p className="text-xs font-black text-blue-700">
-                {inBuildingCount}/{maxInBuilding}
-              </p>
             </div>
           </div>
           
           {/* In-Building Capacity Grid - 2 Rows of 5, 2x Bigger */}
           <div className="bg-white rounded-lg shadow-sm border border-slate-100 flex-shrink-0 p-2" style={{ height: 'calc((100vh - 200px) * 0.30)' }}>
             <div className="flex items-center justify-between mb-2 h-5">
-              <h3 className="text-slate-400 text-[9px] font-bold uppercase tracking-widest">In-Building ({inBuildingCount}/{maxInBuilding})</h3>
-              <div className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${
-                inBuildingCount >= maxInBuilding 
-                  ? 'bg-red-100 text-red-700' 
-                  : inBuildingCount >= maxInBuilding * 0.8
-                  ? 'bg-yellow-100 text-yellow-700'
-                  : 'bg-green-100 text-green-700'
-              }`}>
-                {inBuildingCount >= maxInBuilding ? 'FULL' : `${maxInBuilding - inBuildingCount} open`}
-              </div>
+              <h3 className="text-slate-400 text-[9px] font-bold uppercase tracking-widest">In-Building ({inBuildingCount}/10)</h3>
             </div>
             <div 
               className="grid gap-1.5" 

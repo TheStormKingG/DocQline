@@ -8,9 +8,10 @@ interface LayoutProps {
   setView: (view: 'customer' | 'receptionist' | 'teller' | 'manager') => void;
   resetAll: () => void;
   userRole?: 'customer' | 'receptionist' | 'teller' | 'manager';
+  branchName?: string;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, view, setView, resetAll, userRole }) => {
+export const Layout: React.FC<LayoutProps> = ({ children, view, setView, resetAll, userRole, branchName }) => {
   // Show all views by default (when userRole is undefined)
   // When userRole is set, filter based on role
   const showCustomer = !userRole || userRole === 'customer';
@@ -34,6 +35,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, view, setView, resetAl
             />
             <div className="flex flex-col">
               <h1 className="text-lg font-bold text-slate-800 leading-tight">Laborie Co-operative</h1>
+              {branchName && (
+                <p className="text-xs text-slate-500 leading-tight">{branchName}</p>
+              )}
             </div>
           </div>
           
