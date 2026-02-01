@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { Ticket, BranchConfig } from '../types';
 import { BarChart3, TrendingUp, Calendar, Clock } from 'lucide-react';
 import { generateMockTickets } from '../utils/mockData';
@@ -12,6 +12,8 @@ interface ManagerDashboardProps {
 interface PeakAnalytics {
   peakHoursByDay: { [day: string]: { hour: number; count: number }[] };
   peakHoursData: { hour: number; count: number }[]; // For line graph (8am-4pm)
+  peakDaysData: { day: string; count: number }[]; // For line graph (Mon-Fri)
+  peakMonthsData: { month: number; count: number }[]; // For line graph (Jan-Dec)
   peakDayOfWeek: { day: string; count: number };
   peakWeekOfMonth: { week: number; month: number; year: number; count: number };
   peakMonthOfQuarter: { month: number; quarter: number; year: number; count: number };
@@ -27,6 +29,8 @@ interface PeakAnalytics {
 }
 
 const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ tickets, branch, onAddMockData }) => {
+  const [graphView, setGraphView] = useState<'hours' | 'days' | 'months'>('hours');
+  
   // Auto-generate mock data if no tickets exist
   useEffect(() => {
     const branchTickets = tickets.filter(t => t.branchId === branch.id);
@@ -143,6 +147,30 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ tickets, branch, on
       });
     }
 
+    // Calculate peak days data for line graph (Mon-Fri)
+    const peakDaysData: { day: string; count: number }[] = [];
+    const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    dayOrder.forEach(day => {
+      peakDaysData.push({
+        day,
+        count: dayCounts[day] || 0
+      });
+    });
+
+    // Calculate peak months data for line graph (Jan-Dec)
+    const peakMonthsData: { month: number; count: number }[] = [];
+    const monthCounts: { [month: number]: number } = {};
+    branchTickets.forEach(ticket => {
+      const month = new Date(ticket.joinedAt).getMonth() + 1; // 1-12
+      monthCounts[month] = (monthCounts[month] || 0) + 1;
+    });
+    for (let month = 1; month <= 12; month++) {
+      peakMonthsData.push({
+        month,
+        count: monthCounts[month] || 0
+      });
+    }
+
     // Find peak day of week
     const peakDayEntry = Object.entries(dayCounts)
       .map(([day, count]) => ({ day, count }))
@@ -207,6 +235,8 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ tickets, branch, on
     return {
       peakHoursByDay,
       peakHoursData,
+      peakDaysData,
+      peakMonthsData,
       peakDayOfWeek: peakDayEntry,
       peakWeekOfMonth: peakWeekEntry,
       peakMonthOfQuarter: peakMonthOfQuarterEntry,
@@ -230,12 +260,28 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ tickets, branch, on
         <h2 className="text-3xl font-black text-slate-800">Analytics Dashboard</h2>
       </div>
 
-      {/* Peak Hours Line Graph */}
+      {/* Peak Hours/Days/Months Line Graph */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-        <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-          <Clock size={20} /> Peak Hours (8 AM - 4 PM)
-        </h3>
-        <PeakHoursLineGraph data={analytics.peakHoursData} />
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <Clock size={20} />
+            {graphView === 'hours' && 'Peak Hours (8 AM - 4 PM)'}
+            {graphView === 'days' && 'Peak Day (Mon to Fri)'}
+            {graphView === 'months' && 'Peak Month (Jan to Dec)'}
+          </h3>
+          <select
+            value={graphView}
+            onChange={(e) => setGraphView(e.target.value as 'hours' | 'days' | 'months')}
+            className="px-4 py-2 border border-slate-300 rounded-lg bg-white text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="hours">Peak Hours (8 AM - 4 PM)</option>
+            <option value="days">Peak Day (Mon to Fri)</option>
+            <option value="months">Peak Month (Jan to Dec)</option>
+          </select>
+        </div>
+        {graphView === 'hours' && <PeakHoursLineGraph data={analytics.peakHoursData} type="hours" />}
+        {graphView === 'days' && <PeakHoursLineGraph data={analytics.peakDaysData} type="days" />}
+        {graphView === 'months' && <PeakHoursLineGraph data={analytics.peakMonthsData} type="months" />}
       </div>
 
       {/* Peak Periods */}
@@ -335,12 +381,13 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ tickets, branch, on
   );
 };
 
-// Line Graph Component for Peak Hours
+// Line Graph Component for Peak Hours/Days/Months
 interface PeakHoursLineGraphProps {
-  data: { hour: number; count: number }[];
+  data: { hour?: number; day?: string; month?: number; count: number }[];
+  type: 'hours' | 'days' | 'months';
 }
 
-const PeakHoursLineGraph: React.FC<PeakHoursLineGraphProps> = ({ data }) => {
+const PeakHoursLineGraph: React.FC<PeakHoursLineGraphProps> = ({ data, type }) => {
   const width = 800;
   const height = 300;
   const padding = { top: 40, right: 40, bottom: 60, left: 60 };
@@ -350,18 +397,43 @@ const PeakHoursLineGraph: React.FC<PeakHoursLineGraphProps> = ({ data }) => {
   const maxCount = Math.max(...data.map(d => d.count), 1);
   const minCount = 0;
 
-  // Convert hour to label (8 -> "8 AM", 12 -> "12 PM", 16 -> "4 PM")
-  const formatHour = (hour: number): string => {
-    if (hour === 12) return '12 PM';
-    if (hour > 12) return `${hour - 12} PM`;
-    return `${hour} AM`;
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  // Format label based on type
+  const formatLabel = (item: { hour?: number; day?: string; month?: number }): string => {
+    if (type === 'hours' && item.hour !== undefined) {
+      if (item.hour === 12) return '12 PM';
+      if (item.hour > 12) return `${item.hour - 12} PM`;
+      return `${item.hour} AM`;
+    }
+    if (type === 'days' && item.day !== undefined) {
+      return item.day.substring(0, 3); // Mon, Tue, etc.
+    }
+    if (type === 'months' && item.month !== undefined) {
+      return monthNames[item.month - 1];
+    }
+    return '';
+  };
+
+  // Get value for tooltip
+  const getTooltipValue = (item: { hour?: number; day?: string; month?: number; count: number }): string => {
+    if (type === 'hours' && item.hour !== undefined) {
+      return `${formatLabel(item)}: ${item.count} customers`;
+    }
+    if (type === 'days' && item.day !== undefined) {
+      return `${item.day}: ${item.count} customers`;
+    }
+    if (type === 'months' && item.month !== undefined) {
+      return `${monthNames[item.month - 1]}: ${item.count} customers`;
+    }
+    return `${item.count} customers`;
   };
 
   // Calculate points for the line
   const points = data.map((d, index) => {
     const x = padding.left + (index / (data.length - 1)) * graphWidth;
     const y = padding.top + graphHeight - ((d.count - minCount) / (maxCount - minCount || 1)) * graphHeight;
-    return { x, y, hour: d.hour, count: d.count };
+    return { x, y, ...d, count: d.count };
   });
 
   // Create path for the line
@@ -417,18 +489,18 @@ const PeakHoursLineGraph: React.FC<PeakHoursLineGraphProps> = ({ data }) => {
           );
         })}
 
-        {/* X-axis labels (hours) */}
+        {/* X-axis labels */}
         {data.map((d, index) => {
           const x = padding.left + (index / (data.length - 1)) * graphWidth;
           return (
             <text
-              key={d.hour}
+              key={index}
               x={x}
               y={height - padding.bottom + 20}
               textAnchor="middle"
               className="text-xs fill-slate-500"
             >
-              {formatHour(d.hour)}
+              {formatLabel(d)}
             </text>
           );
         })}
@@ -438,7 +510,7 @@ const PeakHoursLineGraph: React.FC<PeakHoursLineGraphProps> = ({ data }) => {
           const x = padding.left + (index / (data.length - 1)) * graphWidth;
           return (
             <line
-              key={d.hour}
+              key={index}
               x1={x}
               y1={padding.top}
               x2={x}
@@ -471,7 +543,7 @@ const PeakHoursLineGraph: React.FC<PeakHoursLineGraphProps> = ({ data }) => {
               strokeWidth="2"
             />
             {/* Tooltip on hover */}
-            <title>{`${formatHour(point.hour)}: ${point.count} customers`}</title>
+            <title>{getTooltipValue(point)}</title>
           </g>
         ))}
 
