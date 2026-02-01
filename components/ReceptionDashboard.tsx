@@ -108,7 +108,7 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
               {inBuildingCount >= maxInBuilding ? 'FULL' : `${maxInBuilding - inBuildingCount} open`}
             </div>
           </div>
-          <div className="grid grid-cols-5 gap-1.5 h-full" style={{ height: 'calc(100% - 25px)' }}>
+          <div className="grid grid-cols-5 grid-rows-2 gap-1.5 h-full" style={{ height: 'calc(100% - 25px)' }}>
             {Array.from({ length: maxInBuilding }).map((_, index) => {
               const spotNumber = index + 1;
               const sortedInBuilding = [...inBuilding].sort((a, b) => a.queueNumber - b.queueNumber);
@@ -146,29 +146,53 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
           </div>
         </div>
 
-        {/* Remote Waiting Queue - Takes Remaining Space */}
+        {/* Remote Waiting Queue - 5 Rows of 10, 1/3 Size of In-Building */}
         <div className="bg-white rounded-lg shadow-sm border border-slate-100 flex-1 flex flex-col min-h-0 p-2" style={{ minHeight: 0 }}>
           <h3 className="text-slate-400 text-[9px] font-bold uppercase tracking-widest mb-1.5 flex-shrink-0">
             Remote ({remoteWaiting.length})
           </h3>
           {remoteWaiting.length > 0 ? (
-            <div className="grid grid-cols-8 lg:grid-cols-10 gap-1.5 overflow-y-auto flex-1 min-h-0" style={{ gridAutoRows: 'minmax(0, 1fr)' }}>
-              {remoteWaiting.map(ticket => (
+            <div className="grid grid-cols-10 grid-rows-5 gap-0.5 overflow-y-auto flex-1 min-h-0">
+              {Array.from({ length: 50 }).map((_, index) => {
+                const ticket = remoteWaiting[index];
+                if (!ticket) {
+                  return (
+                    <div 
+                      key={`empty-${index}`}
+                      className="rounded-sm flex flex-col items-center justify-center border border-dashed border-slate-200 bg-slate-50"
+                      style={{ aspectRatio: '1' }}
+                    >
+                      <span className="text-slate-200 text-[10px] font-black">#{index + 1}</span>
+                    </div>
+                  );
+                }
+                return (
+                  <div 
+                    key={ticket.id}
+                    onClick={() => setSelectedTicket(ticket)}
+                    className="rounded-sm flex flex-col items-center justify-center border border-slate-200 bg-slate-50 text-slate-400 hover:border-slate-300 hover:bg-slate-100 transition-all cursor-pointer"
+                    style={{ aspectRatio: '1' }}
+                  >
+                    <span className="text-[10px] font-black">{ticket.queueNumber}</span>
+                    <span className="text-[6px] uppercase font-bold tracking-tighter opacity-70 mt-0.5 leading-none">
+                      {ticket.name.split(' ')[0].substring(0, 4)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="grid grid-cols-10 grid-rows-5 gap-0.5 flex-1">
+              {Array.from({ length: 50 }).map((_, index) => (
                 <div 
-                  key={ticket.id}
-                  onClick={() => setSelectedTicket(ticket)}
-                  className="rounded-md flex flex-col items-center justify-center border-2 border-slate-200 bg-slate-50 text-slate-400 hover:border-slate-300 hover:bg-slate-100 transition-all cursor-pointer"
+                  key={`empty-${index}`}
+                  className="rounded-sm flex flex-col items-center justify-center border border-dashed border-slate-200 bg-slate-50"
                   style={{ aspectRatio: '1' }}
                 >
-                  <span className="text-sm font-black">{ticket.queueNumber}</span>
-                  <span className="text-[8px] uppercase font-bold tracking-tighter opacity-70 mt-0.5">
-                    {ticket.name.split(' ')[0].substring(0, 5)}
-                  </span>
+                  <span className="text-slate-200 text-[10px] font-black">#{index + 1}</span>
                 </div>
               ))}
             </div>
-          ) : (
-            <p className="text-slate-300 italic text-[9px] text-center py-2">No remote waiting</p>
           )}
         </div>
 
