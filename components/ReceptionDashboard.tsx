@@ -293,36 +293,58 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
       <div className="lg:col-span-4 flex flex-col gap-1.5" style={{ height: '100%' }}>
         <div className="bg-slate-900 text-white rounded-xl relative overflow-hidden flex-shrink-0 p-3" style={{ height: 'calc((100vh - 200px) * 0.35)' }}>
           <div className="relative z-10 h-full flex flex-col">
-            <h3 className="text-slate-400 text-[9px] font-bold uppercase mb-2 tracking-widest flex-shrink-0">Next</h3>
+            <h3 className="text-slate-400 text-[9px] font-bold uppercase mb-2 tracking-widest flex-shrink-0">Now Serving</h3>
             <div className="flex flex-col items-center justify-center flex-1 text-center">
-              {confirmedNext ? (
+              {inTransaction.length > 0 ? (
                 <>
                   <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center text-xl font-black mb-1 shadow-[0_0_15px_rgba(34,197,94,0.4)]">
-                    {confirmedNext.queueNumber}
+                    {inTransaction[0].queueNumber}
                   </div>
-                  <p className="text-xs font-bold mb-0.5">{confirmedNext.name.split(' ')[0]}</p>
-                  {confirmedNext.memberId && (
-                    <p className="text-[9px] text-green-300 mb-0.5">ID: {confirmedNext.memberId}</p>
+                  <p className="text-xs font-bold mb-0.5">{inTransaction[0].name}</p>
+                  {inTransaction[0].memberId && (
+                    <p className="text-[9px] text-green-300 mb-0.5">ID: {inTransaction[0].memberId}</p>
                   )}
-                  <p className="text-green-400 text-[9px] font-medium">Ready</p>
+                  {inTransaction[0].tellerId && (
+                    <p className="text-[9px] text-green-300 mb-0.5">Teller: {inTransaction[0].tellerId}</p>
+                  )}
                 </>
               ) : (
                 <>
                   <div className="w-12 h-12 border-2 border-dashed border-slate-700 rounded-xl flex items-center justify-center text-slate-700 mb-1">
                     <UserCheck size={16} />
                   </div>
-                  <p className="text-slate-500 italic text-[9px]">Awaiting...</p>
+                  <p className="text-slate-500 italic text-[9px]">No active service</p>
                 </>
               )}
             </div>
             
             <div className="mt-auto pt-2 border-t border-slate-800 flex-shrink-0">
               <button 
-                disabled={!nextUp || !!confirmedNext || inBuildingCount >= maxInBuilding}
-                onClick={() => nextUp && updateStatus(nextUp.id, TicketStatus.ELIGIBLE_FOR_ENTRY, 'reception', 'Called by reception')}
+                disabled={inTransaction.length === 0}
+                onClick={async () => {
+                  if (inTransaction.length > 0) {
+                    // Complete current transaction
+                    await updateStatus(inTransaction[0].id, TicketStatus.COMPLETED, 'reception', 'Completed by reception');
+                    // Call next customer if available
+                    // First check for someone already in building (ARRIVED or IN_BUILDING)
+                    const nextInBuilding = branchTickets.find(t => 
+                      (t.status === TicketStatus.ARRIVED || t.status === TicketStatus.IN_BUILDING) &&
+                      t.id !== inTransaction[0].id
+                    );
+                    if (nextInBuilding) {
+                      await updateStatus(nextInBuilding.id, TicketStatus.IN_SERVICE, 'reception', 'Called to service by reception');
+                    } else if (confirmedNext) {
+                      // Someone eligible for entry
+                      await updateStatus(confirmedNext.id, TicketStatus.IN_SERVICE, 'reception', 'Called to service by reception');
+                    } else if (nextUp && inBuildingCount < maxInBuilding) {
+                      // Make next remote customer eligible
+                      await updateStatus(nextUp.id, TicketStatus.ELIGIBLE_FOR_ENTRY, 'reception', 'Made eligible by reception');
+                    }
+                  }
+                }}
                 className="w-full py-2 bg-white text-slate-900 rounded-lg font-bold flex items-center justify-center gap-1.5 hover:bg-slate-100 transition-all disabled:opacity-30 text-xs"
               >
-                Make Eligible <ArrowRight size={12} />
+                Complete + Call Next <ArrowRight size={12} />
               </button>
             </div>
           </div>
