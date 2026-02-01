@@ -72,48 +72,48 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-full">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-full overflow-hidden">
       {/* Queue Grid */}
-      <div className="lg:col-span-8 space-y-8">
-        <div className="flex items-center justify-between mb-4">
+      <div className="lg:col-span-8 space-y-3 flex flex-col overflow-hidden">
+        {/* Compact Header */}
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Building2 size={20} className="text-slate-500" />
-            <h2 className="text-xl font-bold">
+            <Building2 size={18} className="text-slate-500" />
+            <h2 className="text-lg font-bold">
               Queue Overview - {branch.name}
-              <span className="text-sm font-normal text-slate-400 ml-2">
-                ({remoteWaiting.length + eligibleForEntry.length} Active)
+              <span className="text-xs font-normal text-slate-400 ml-2">
+                ({remoteWaiting.length + eligibleForEntry.length + inBuilding.length} Active)
               </span>
             </h2>
           </div>
-          <div className="flex items-center gap-3 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg">
-            <Users size={20} className="text-blue-600" />
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg">
+            <Users size={16} className="text-blue-600" />
             <div>
-              <p className="text-xs text-blue-600 font-bold uppercase">Inside</p>
-              <p className="text-lg font-black text-blue-700">
+              <p className="text-[10px] text-blue-600 font-bold uppercase">Inside</p>
+              <p className="text-base font-black text-blue-700">
                 {inBuildingCount}/{maxInBuilding}
               </p>
             </div>
           </div>
         </div>
         
-        {/* In-Building Capacity Grid - 9 Spots */}
-        <div className="p-6 bg-white rounded-2xl shadow-sm border border-slate-100">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-slate-400 text-xs font-bold uppercase tracking-widest">In-Building Capacity ({inBuildingCount}/{maxInBuilding})</h3>
-            <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+        {/* In-Building Capacity Grid - 9 Spots (Compact) */}
+        <div className="p-3 bg-white rounded-xl shadow-sm border border-slate-100">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">In-Building ({inBuildingCount}/{maxInBuilding})</h3>
+            <div className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
               inBuildingCount >= maxInBuilding 
                 ? 'bg-red-100 text-red-700' 
                 : inBuildingCount >= maxInBuilding * 0.8
                 ? 'bg-yellow-100 text-yellow-700'
                 : 'bg-green-100 text-green-700'
             }`}>
-              {inBuildingCount >= maxInBuilding ? 'AT CAPACITY' : `${maxInBuilding - inBuildingCount} spots available`}
+              {inBuildingCount >= maxInBuilding ? 'FULL' : `${maxInBuilding - inBuildingCount} open`}
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-2">
             {Array.from({ length: maxInBuilding }).map((_, index) => {
               const spotNumber = index + 1;
-              // Get customer for this spot (sorted by queue number, take first 9)
               const sortedInBuilding = [...inBuilding].sort((a, b) => a.queueNumber - b.queueNumber);
               const customerInSpot = sortedInBuilding[index];
               
@@ -121,7 +121,7 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
                 <div
                   key={index}
                   onClick={() => customerInSpot && setSelectedTicket(customerInSpot)}
-                  className={`aspect-square rounded-xl flex flex-col items-center justify-center border-2 transition-all ${
+                  className={`aspect-square rounded-lg flex flex-col items-center justify-center border-2 transition-all ${
                     customerInSpot 
                       ? 'bg-green-50 border-green-300 cursor-pointer hover:border-green-400' 
                       : 'border-dashed border-slate-200 bg-slate-50'
@@ -129,15 +129,15 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
                 >
                   {customerInSpot ? (
                     <>
-                      <span className="text-2xl font-black text-green-700">{customerInSpot.queueNumber}</span>
-                      <span className="text-[10px] uppercase font-bold tracking-tighter text-green-600 mt-1">
-                        {customerInSpot.name.split(' ')[0]}
+                      <span className="text-lg font-black text-green-700">{customerInSpot.queueNumber}</span>
+                      <span className="text-[9px] uppercase font-bold tracking-tighter text-green-600 mt-0.5">
+                        {customerInSpot.name.split(' ')[0].substring(0, 8)}
                       </span>
                     </>
                   ) : (
                     <>
-                      <span className="text-slate-300 text-xl font-black">#{spotNumber}</span>
-                      <span className="text-[10px] uppercase font-bold tracking-tighter text-slate-300 mt-1">
+                      <span className="text-slate-300 text-sm font-black">#{spotNumber}</span>
+                      <span className="text-[9px] uppercase font-bold tracking-tighter text-slate-300 mt-0.5">
                         Empty
                       </span>
                     </>
@@ -146,209 +146,163 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
               );
             })}
           </div>
-          {inBuilding.length > 0 && (
-            <div className="mt-4 space-y-2">
-              {inBuilding.map(t => (
-                <div key={t.id} className="flex items-center justify-between p-2 bg-green-50 rounded-lg border border-green-200">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-green-600 text-white rounded-lg flex items-center justify-center font-bold text-sm">
-                      {t.queueNumber}
-                    </div>
-                    <div>
-                      <p className="font-bold text-green-900 text-sm">{t.name}</p>
-                      {t.enteredBuildingAt && (
-                        <p className="text-xs text-green-600">
-                          Entered {new Date(t.enteredBuildingAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleMarkLeft(t.id)}
-                    className="p-1.5 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-all"
-                    title="Mark as Left"
-                  >
-                    <LogOut size={16} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
-        {/* Remote Waiting Queue */}
-        <div className="p-6 bg-white rounded-2xl shadow-sm border border-slate-100">
-          <h3 className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-4">
-            Remote Waiting Queue ({remoteWaiting.length})
+        {/* Remote Waiting Queue (Compact, Scrollable) */}
+        <div className="p-3 bg-white rounded-xl shadow-sm border border-slate-100 flex-1 flex flex-col min-h-0">
+          <h3 className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-2">
+            Remote Waiting ({remoteWaiting.length})
           </h3>
           {remoteWaiting.length > 0 ? (
-            <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+            <div className="grid grid-cols-6 lg:grid-cols-8 gap-2 overflow-y-auto flex-1">
               {remoteWaiting.map(ticket => (
                 <div 
                   key={ticket.id}
                   onClick={() => setSelectedTicket(ticket)}
-                  className="aspect-square rounded-xl flex flex-col items-center justify-center border-2 border-slate-200 bg-slate-50 text-slate-400 hover:border-slate-300 hover:bg-slate-100 transition-all cursor-pointer"
+                  className="aspect-square rounded-lg flex flex-col items-center justify-center border-2 border-slate-200 bg-slate-50 text-slate-400 hover:border-slate-300 hover:bg-slate-100 transition-all cursor-pointer"
                 >
-                  <span className="text-xl font-black">{ticket.queueNumber}</span>
-                  <span className="text-[10px] uppercase font-bold tracking-tighter opacity-70 mt-1">
-                    {ticket.name.split(' ')[0]}
+                  <span className="text-base font-black">{ticket.queueNumber}</span>
+                  <span className="text-[9px] uppercase font-bold tracking-tighter opacity-70 mt-0.5">
+                    {ticket.name.split(' ')[0].substring(0, 6)}
                   </span>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-slate-300 italic text-sm text-center py-8">No customers in remote waiting queue.</p>
+            <p className="text-slate-300 italic text-xs text-center py-4">No customers in remote waiting queue.</p>
           )}
         </div>
 
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="p-6 bg-white rounded-2xl shadow-sm border border-slate-100">
-            <h3 className="text-slate-400 text-xs font-bold uppercase mb-4 tracking-widest">Eligible for Entry</h3>
+        {/* Compact Status Sections */}
+        <div className="grid grid-cols-3 gap-2">
+          <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100">
+            <h3 className="text-slate-400 text-[9px] font-bold uppercase mb-2 tracking-widest">Eligible</h3>
             {eligibleForEntry.length > 0 ? (
-              <ul className="space-y-4">
-                {eligibleForEntry.map(t => (
-                  <li key={t.id} className="flex items-center justify-between p-3 bg-orange-50 rounded-xl border border-orange-200">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center font-bold">
-                        {t.queueNumber}
-                      </div>
-                      <div>
-                        <p className="font-bold text-slate-800">{t.name}</p>
-                        {t.memberId && <p className="text-xs text-slate-500">ID: {t.memberId}</p>}
-                        {t.eligibleForEntryAt && (
-                          <p className="text-xs text-slate-400">
-                            Eligible {new Date(t.eligibleForEntryAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </p>
-                        )}
-                      </div>
-                    </div>
+              <div className="space-y-1 max-h-24 overflow-y-auto">
+                {eligibleForEntry.slice(0, 3).map(t => (
+                  <div key={t.id} className="flex items-center justify-between p-1.5 bg-orange-50 rounded border border-orange-200">
+                    <span className="text-xs font-bold text-slate-800">#{t.queueNumber}</span>
                     <button
                       onClick={() => handleMarkEntered(t.id)}
                       disabled={inBuildingCount >= maxInBuilding}
-                      className="p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                      title={inBuildingCount >= maxInBuilding ? "Building at capacity" : "Mark as Entered"}
+                      className="p-1 bg-green-100 text-green-600 rounded hover:bg-green-200 disabled:opacity-50"
+                      title="Mark Entered"
                     >
-                      <LogIn size={18} />
+                      <LogIn size={12} />
                     </button>
-                  </li>
+                  </div>
                 ))}
-              </ul>
+                {eligibleForEntry.length > 3 && (
+                  <p className="text-[9px] text-slate-400 text-center">+{eligibleForEntry.length - 3} more</p>
+                )}
+              </div>
             ) : (
-              <p className="text-slate-300 italic text-sm">No customers eligible for entry.</p>
+              <p className="text-slate-300 italic text-[9px]">None</p>
             )}
           </div>
 
-          <div className="p-6 bg-white rounded-2xl shadow-sm border border-slate-100">
-            <h3 className="text-slate-400 text-xs font-bold uppercase mb-4 tracking-widest">Calling Now</h3>
+          <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100">
+            <h3 className="text-slate-400 text-[9px] font-bold uppercase mb-2 tracking-widest">Called</h3>
             {called.length > 0 ? (
-              <ul className="space-y-4">
-                {called.map(t => (
-                  <li key={t.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center font-bold">
-                        {t.queueNumber}
-                      </div>
-                      <div>
-                        <p className="font-bold text-slate-800">{t.name}</p>
-                        {t.memberId && <p className="text-xs text-slate-500">ID: {t.memberId}</p>}
-                        <p className="text-xs text-slate-400">Called {new Date(t.calledAt!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
+              <div className="space-y-1 max-h-24 overflow-y-auto">
+                {called.slice(0, 3).map(t => (
+                  <div key={t.id} className="flex items-center justify-between p-1.5 bg-slate-50 rounded border border-slate-200">
+                    <span className="text-xs font-bold text-slate-800">#{t.queueNumber}</span>
+                    <div className="flex gap-1">
                       <button 
                         onClick={() => handleMarkEntered(t.id)}
                         disabled={inBuildingCount >= maxInBuilding}
-                        className="p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={inBuildingCount >= maxInBuilding ? "Building at capacity" : "Mark as Entered"}
+                        className="p-1 bg-green-100 text-green-600 rounded hover:bg-green-200 disabled:opacity-50"
+                        title="Mark Entered"
                       >
-                        <LogIn size={18} />
+                        <LogIn size={12} />
                       </button>
                       <button 
                         onClick={() => updateStatus(t.id, TicketStatus.REMOTE_WAITING, 'reception', 'No show')}
-                        className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200"
+                        className="p-1 bg-red-100 text-red-600 rounded hover:bg-red-200"
                         title="No Show"
                       >
-                        <UserX size={18} />
+                        <UserX size={12} />
                       </button>
                     </div>
-                  </li>
+                  </div>
                 ))}
-              </ul>
+                {called.length > 3 && (
+                  <p className="text-[9px] text-slate-400 text-center">+{called.length - 3} more</p>
+                )}
+              </div>
             ) : (
-              <p className="text-slate-300 italic text-sm">No customers currently in "Called" state.</p>
+              <p className="text-slate-300 italic text-[9px]">None</p>
             )}
           </div>
 
-          <div className="p-6 bg-white rounded-2xl shadow-sm border border-slate-100">
-            <h3 className="text-slate-400 text-xs font-bold uppercase mb-4 tracking-widest">In Transaction</h3>
+          <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100">
+            <h3 className="text-slate-400 text-[9px] font-bold uppercase mb-2 tracking-widest">In Service</h3>
             {inTransaction.length > 0 ? (
-              <ul className="space-y-4">
-                {inTransaction.map(t => (
-                  <li key={t.id} className="flex items-center gap-3 p-3 bg-blue-50 rounded-xl">
-                    <div className="w-10 h-10 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold">
-                      {t.queueNumber}
-                    </div>
-                    <div>
-                      <p className="font-bold text-blue-900">{t.name}</p>
-                      {t.tellerId && <p className="text-xs text-blue-400">Teller: {t.tellerId}</p>}
-                    </div>
-                  </li>
+              <div className="space-y-1 max-h-24 overflow-y-auto">
+                {inTransaction.slice(0, 3).map(t => (
+                  <div key={t.id} className="flex items-center gap-1.5 p-1.5 bg-blue-50 rounded border border-blue-200">
+                    <span className="text-xs font-bold text-blue-900">#{t.queueNumber}</span>
+                    {t.tellerId && <span className="text-[9px] text-blue-600">{t.tellerId}</span>}
+                  </div>
                 ))}
-              </ul>
+                {inTransaction.length > 3 && (
+                  <p className="text-[9px] text-slate-400 text-center">+{inTransaction.length - 3} more</p>
+                )}
+              </div>
             ) : (
-              <p className="text-slate-300 italic text-sm">No active transactions.</p>
+              <p className="text-slate-300 italic text-[9px]">None</p>
             )}
           </div>
         </div>
       </div>
 
-      {/* Action Sidebar */}
-      <div className="lg:col-span-4 space-y-6">
-        <div className="bg-slate-900 text-white p-8 rounded-[2.5rem] relative overflow-hidden">
+      {/* Action Sidebar (Compact) */}
+      <div className="lg:col-span-4 space-y-3 flex flex-col">
+        <div className="bg-slate-900 text-white p-4 rounded-2xl relative overflow-hidden flex-shrink-0">
           <div className="relative z-10">
-            <h3 className="text-slate-400 text-xs font-bold uppercase mb-4 tracking-widest">Confirmed Next</h3>
-            <div className="flex flex-col items-center py-6 text-center">
+            <h3 className="text-slate-400 text-[10px] font-bold uppercase mb-3 tracking-widest">Confirmed Next</h3>
+            <div className="flex flex-col items-center py-3 text-center">
               {confirmedNext ? (
                 <>
-                  <div className="w-24 h-24 bg-green-500 rounded-3xl flex items-center justify-center text-4xl font-black mb-4 shadow-[0_0_30px_rgba(34,197,94,0.4)]">
-                  {confirmedNext.queueNumber}
+                  <div className="w-16 h-16 bg-green-500 rounded-2xl flex items-center justify-center text-2xl font-black mb-2 shadow-[0_0_20px_rgba(34,197,94,0.4)]">
+                    {confirmedNext.queueNumber}
                   </div>
-                  <p className="text-xl font-bold mb-1">{confirmedNext.name}</p>
+                  <p className="text-sm font-bold mb-1">{confirmedNext.name}</p>
                   {confirmedNext.memberId && (
-                    <p className="text-sm text-green-300 mb-1">ID: {confirmedNext.memberId}</p>
+                    <p className="text-[10px] text-green-300 mb-1">ID: {confirmedNext.memberId}</p>
                   )}
-                  <p className="text-green-400 text-sm font-medium">Ready for Teller</p>
+                  <p className="text-green-400 text-[10px] font-medium">Ready for Teller</p>
                 </>
               ) : (
                 <>
-                  <div className="w-24 h-24 border-4 border-dashed border-slate-700 rounded-3xl flex items-center justify-center text-slate-700 mb-4">
-                    <UserCheck size={32} />
+                  <div className="w-16 h-16 border-2 border-dashed border-slate-700 rounded-2xl flex items-center justify-center text-slate-700 mb-2">
+                    <UserCheck size={20} />
                   </div>
-                  <p className="text-slate-500 italic">Awaiting confirmation...</p>
+                  <p className="text-slate-500 italic text-xs">Awaiting confirmation...</p>
                 </>
               )}
             </div>
             
-            <div className="mt-8 pt-8 border-t border-slate-800">
-              <h4 className="text-xs font-bold text-slate-500 uppercase mb-4">Actions</h4>
+            <div className="mt-4 pt-4 border-t border-slate-800">
+              <h4 className="text-[10px] font-bold text-slate-500 uppercase mb-2">Actions</h4>
               <button 
                 disabled={!nextUp || !!confirmedNext || inBuildingCount >= maxInBuilding}
                 onClick={() => nextUp && updateStatus(nextUp.id, TicketStatus.ELIGIBLE_FOR_ENTRY, 'reception', 'Called by reception')}
-                className="w-full py-4 bg-white text-slate-900 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-100 transition-all disabled:opacity-30"
+                className="w-full py-2.5 bg-white text-slate-900 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-100 transition-all disabled:opacity-30 text-sm"
               >
-                Make Eligible for Entry <ArrowRight size={18} />
+                Make Eligible <ArrowRight size={14} />
               </button>
             </div>
           </div>
-          <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-blue-600 rounded-full blur-[80px] opacity-20" />
+          <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-blue-600 rounded-full blur-[60px] opacity-20" />
         </div>
 
-        <div className="p-6 bg-blue-50 border border-blue-100 rounded-3xl">
-          <div className="flex gap-3">
-            <Info className="text-blue-500 shrink-0" size={20} />
-            <p className="text-sm text-blue-700 leading-snug">
-              Calling a customer starts their <strong>{branch.gracePeriodMinutes}-minute arrival countdown</strong>. They will be polled at the 1-minute mark.
+        <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl flex-shrink-0">
+          <div className="flex gap-2">
+            <Info className="text-blue-500 shrink-0" size={14} />
+            <p className="text-[10px] text-blue-700 leading-tight">
+              Calling starts <strong>{branch.gracePeriodMinutes}-min countdown</strong>. Polled at 1-min mark.
             </p>
           </div>
         </div>
