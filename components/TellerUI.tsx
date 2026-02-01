@@ -105,10 +105,15 @@ const TellerUI: React.FC<TellerUIProps> = ({
                 </div>
               )}
               <button 
-                onClick={handleFinishTransaction}
+                onClick={async () => {
+                  await handleFinishTransaction();
+                  if (nextReady) {
+                    handleCallNext();
+                  }
+                }}
                 className="w-full py-5 bg-white text-blue-600 rounded-2xl font-black flex items-center justify-center gap-3 hover:bg-slate-50 transition-all shadow-lg"
               >
-                <CheckCircle size={24} /> TRANSACTION COMPLETE
+                <CheckCircle size={24} /> Complete Transaction + Call Next
               </button>
             </div>
           ) : (
