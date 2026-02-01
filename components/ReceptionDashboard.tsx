@@ -108,7 +108,15 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
               {inBuildingCount >= maxInBuilding ? 'FULL' : `${maxInBuilding - inBuildingCount} open`}
             </div>
           </div>
-          <div className="grid grid-cols-5 gap-1.5 h-full" style={{ height: 'calc(100% - 25px)', gridTemplateRows: 'repeat(2, 1fr)' }}>
+          <div 
+            className="grid gap-1.5" 
+            style={{ 
+              gridTemplateColumns: 'repeat(5, 1fr)',
+              gridTemplateRows: 'repeat(2, 1fr)',
+              height: 'calc(100% - 25px)',
+              width: '100%'
+            }}
+          >
             {Array.from({ length: 10 }).map((_, index) => {
               const spotNumber = index + 1;
               const sortedInBuilding = [...inBuilding].sort((a, b) => a.queueNumber - b.queueNumber);
@@ -124,7 +132,7 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
                       ? 'bg-green-50 border-green-300 cursor-pointer hover:border-green-400' 
                       : 'border-dashed border-slate-200 bg-slate-50'
                   }`}
-                  style={{ aspectRatio: '1' }}
+                  style={{ width: '100%', height: '100%', minHeight: 0 }}
                 >
                   {customerInSpot ? (
                     <>
