@@ -132,7 +132,7 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
 
         {/* Action Sidebar - Dynamic Height */}
         <div className="lg:col-span-4 flex flex-col gap-1.5">
-        <div className="bg-slate-900 text-white rounded-xl relative overflow-hidden flex-shrink-0 p-3" style={{ height: 'calc((100vh - 200px) * 0.35)' }}>
+        <div className="bg-slate-900 text-white rounded-xl relative overflow-hidden flex-shrink-0 p-3" style={{ height: 'calc((100vh - 200px) * 0.30)' }}>
           <div className="relative z-10 h-full flex flex-col">
             <h3 className="text-slate-400 text-[9px] font-bold uppercase mb-2 tracking-widest flex-shrink-0">Now Serving</h3>
             <div className="flex flex-col items-center justify-center flex-1 text-center">
