@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Ticket, TicketStatus, BranchConfig } from '../types';
-import { Play, CheckCircle, Clock, User, Pause, Flag, Building2 } from 'lucide-react';
+import { Play, CheckCircle, Clock, User, Pause, Flag } from 'lucide-react';
 
 interface TellerUIProps {
   tickets: Ticket[];
@@ -67,33 +67,6 @@ const TellerUI: React.FC<TellerUIProps> = ({
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <Building2 size={20} className="text-slate-500" />
-            <h2 className="text-3xl font-black text-slate-800">Teller Terminal</h2>
-          </div>
-          <p className="text-slate-500">{branch.name} | Counter {tellerId || '1'}</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="px-4 py-2 bg-white rounded-full border border-slate-100 shadow-sm flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full animate-pulse ${branch.isPaused ? 'bg-orange-500' : 'bg-green-500'}`} />
-            <span className="text-xs font-bold text-slate-600">
-              {branch.isPaused ? 'Queue Paused' : 'Active Session'}
-            </span>
-          </div>
-          {onPauseQueue && (
-            <button
-              onClick={onPauseQueue}
-              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center gap-2 text-sm font-medium text-slate-700 transition-all"
-            >
-              <Pause size={16} />
-              {branch.isPaused ? 'Resume' : 'Pause'} Queue
-            </button>
-          )}
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Current Transaction Card */}
         <div className={`p-8 rounded-[2rem] border-2 transition-all ${
