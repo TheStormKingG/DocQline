@@ -22,8 +22,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, view, setView, resetAl
   const showAllButtons = true;
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="bg-white border-b sticky top-0 z-50">
+    <div className="flex flex-col" style={{ height: '100vh' }}>
+      <header className="bg-white border-b sticky top-0 z-50 flex-shrink-0">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img 
@@ -74,13 +74,13 @@ export const Layout: React.FC<LayoutProps> = ({ children, view, setView, resetAl
         </div>
       </header>
 
-      <main className="flex-1 max-w-6xl mx-auto w-full p-2 md:p-4 overflow-hidden flex flex-col h-0">
+      <main className="flex-1 max-w-6xl mx-auto w-full p-2 md:p-4 overflow-hidden flex flex-col" style={{ minHeight: 0, height: 'calc(100vh - 64px - 80px)' }}>
         <div className="flex-1 overflow-hidden min-h-0">
           {children}
         </div>
       </main>
 
-      <footer className="bg-white border-t py-4">
+      <footer className="bg-white border-t py-4 flex-shrink-0">
         <p className="text-center text-slate-400 text-sm">
           &copy; {new Date().getFullYear()} Laborie Co-operative Credit Union Ltd. Est. 1976
         </p>

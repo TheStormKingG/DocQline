@@ -74,9 +74,9 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 h-full overflow-hidden">
       {/* Queue Grid */}
-      <div className="lg:col-span-8 space-y-2 flex flex-col overflow-hidden">
-        {/* Ultra-Compact Header */}
-        <div className="flex items-center justify-between">
+      <div className="lg:col-span-8 flex flex-col overflow-hidden gap-1.5" style={{ height: '100%' }}>
+        {/* Compact Header - Fixed Height */}
+        <div className="flex items-center justify-between flex-shrink-0" style={{ height: '28px' }}>
           <div className="flex items-center gap-1.5">
             <Building2 size={14} className="text-slate-500" />
             <h2 className="text-sm font-bold">
@@ -94,9 +94,9 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
           </div>
         </div>
         
-        {/* In-Building Capacity Grid - 9 Spots (66% Smaller) */}
-        <div className="p-1.5 bg-white rounded-lg shadow-sm border border-slate-100">
-          <div className="flex items-center justify-between mb-1">
+        {/* In-Building Capacity Grid - Fixed Proportional Height */}
+        <div className="bg-white rounded-lg shadow-sm border border-slate-100 flex-shrink-0 p-1.5" style={{ height: 'calc((100vh - 200px) * 0.15)' }}>
+          <div className="flex items-center justify-between mb-1 h-4">
             <h3 className="text-slate-400 text-[9px] font-bold uppercase tracking-widest">In-Building ({inBuildingCount}/{maxInBuilding})</h3>
             <div className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${
               inBuildingCount >= maxInBuilding 
@@ -108,7 +108,7 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
               {inBuildingCount >= maxInBuilding ? 'FULL' : `${maxInBuilding - inBuildingCount} open`}
             </div>
           </div>
-          <div className="grid grid-cols-9 gap-0.5">
+          <div className="grid grid-cols-9 gap-0.5 h-full" style={{ height: 'calc(100% - 20px)' }}>
             {Array.from({ length: maxInBuilding }).map((_, index) => {
               const spotNumber = index + 1;
               const sortedInBuilding = [...inBuilding].sort((a, b) => a.queueNumber - b.queueNumber);
@@ -118,11 +118,12 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
                 <div
                   key={index}
                   onClick={() => customerInSpot && setSelectedTicket(customerInSpot)}
-                  className={`aspect-square rounded-sm flex flex-col items-center justify-center border transition-all ${
+                  className={`rounded-sm flex flex-col items-center justify-center border transition-all ${
                     customerInSpot 
                       ? 'bg-green-50 border-green-300 cursor-pointer hover:border-green-400' 
                       : 'border-dashed border-slate-200 bg-slate-50'
                   }`}
+                  style={{ aspectRatio: '1' }}
                 >
                   {customerInSpot ? (
                     <>
@@ -145,18 +146,19 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
           </div>
         </div>
 
-        {/* Remote Waiting Queue (Ultra-Compact, Scrollable) */}
-        <div className="p-2 bg-white rounded-lg shadow-sm border border-slate-100 flex-1 flex flex-col min-h-0">
-          <h3 className="text-slate-400 text-[9px] font-bold uppercase tracking-widest mb-1.5">
+        {/* Remote Waiting Queue - Takes Remaining Space */}
+        <div className="bg-white rounded-lg shadow-sm border border-slate-100 flex-1 flex flex-col min-h-0 p-2" style={{ minHeight: 0 }}>
+          <h3 className="text-slate-400 text-[9px] font-bold uppercase tracking-widest mb-1.5 flex-shrink-0">
             Remote ({remoteWaiting.length})
           </h3>
           {remoteWaiting.length > 0 ? (
-            <div className="grid grid-cols-8 lg:grid-cols-10 gap-1.5 overflow-y-auto flex-1">
+            <div className="grid grid-cols-8 lg:grid-cols-10 gap-1.5 overflow-y-auto flex-1 min-h-0" style={{ gridAutoRows: 'minmax(0, 1fr)' }}>
               {remoteWaiting.map(ticket => (
                 <div 
                   key={ticket.id}
                   onClick={() => setSelectedTicket(ticket)}
-                  className="aspect-square rounded-md flex flex-col items-center justify-center border-2 border-slate-200 bg-slate-50 text-slate-400 hover:border-slate-300 hover:bg-slate-100 transition-all cursor-pointer"
+                  className="rounded-md flex flex-col items-center justify-center border-2 border-slate-200 bg-slate-50 text-slate-400 hover:border-slate-300 hover:bg-slate-100 transition-all cursor-pointer"
+                  style={{ aspectRatio: '1' }}
                 >
                   <span className="text-sm font-black">{ticket.queueNumber}</span>
                   <span className="text-[8px] uppercase font-bold tracking-tighter opacity-70 mt-0.5">
@@ -170,12 +172,12 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
           )}
         </div>
 
-        {/* Ultra-Compact Status Sections - Single Row */}
-        <div className="grid grid-cols-3 gap-1.5">
-          <div className="p-1.5 bg-white rounded-lg shadow-sm border border-slate-100">
-            <h3 className="text-slate-400 text-[8px] font-bold uppercase mb-1 tracking-widest">Eligible</h3>
+        {/* Status Sections - Fixed Small Height */}
+        <div className="grid grid-cols-3 gap-1.5 flex-shrink-0" style={{ height: 'calc((100vh - 200px) * 0.12)' }}>
+          <div className="p-1.5 bg-white rounded-lg shadow-sm border border-slate-100 overflow-hidden flex flex-col">
+            <h3 className="text-slate-400 text-[8px] font-bold uppercase mb-1 tracking-widest flex-shrink-0">Eligible</h3>
             {eligibleForEntry.length > 0 ? (
-              <div className="space-y-0.5 max-h-16 overflow-y-auto">
+              <div className="space-y-0.5 overflow-y-auto flex-1 min-h-0">
                 {eligibleForEntry.slice(0, 2).map(t => (
                   <div key={t.id} className="flex items-center justify-between p-1 bg-orange-50 rounded border border-orange-200">
                     <span className="text-[10px] font-bold text-slate-800">#{t.queueNumber}</span>
@@ -198,10 +200,10 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
             )}
           </div>
 
-          <div className="p-1.5 bg-white rounded-lg shadow-sm border border-slate-100">
-            <h3 className="text-slate-400 text-[8px] font-bold uppercase mb-1 tracking-widest">Called</h3>
+          <div className="p-1.5 bg-white rounded-lg shadow-sm border border-slate-100 overflow-hidden flex flex-col">
+            <h3 className="text-slate-400 text-[8px] font-bold uppercase mb-1 tracking-widest flex-shrink-0">Called</h3>
             {called.length > 0 ? (
-              <div className="space-y-0.5 max-h-16 overflow-y-auto">
+              <div className="space-y-0.5 overflow-y-auto flex-1 min-h-0">
                 {called.slice(0, 2).map(t => (
                   <div key={t.id} className="flex items-center justify-between p-1 bg-slate-50 rounded border border-slate-200">
                     <span className="text-[10px] font-bold text-slate-800">#{t.queueNumber}</span>
@@ -233,10 +235,10 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
             )}
           </div>
 
-          <div className="p-1.5 bg-white rounded-lg shadow-sm border border-slate-100">
-            <h3 className="text-slate-400 text-[8px] font-bold uppercase mb-1 tracking-widest">In Service</h3>
+          <div className="p-1.5 bg-white rounded-lg shadow-sm border border-slate-100 overflow-hidden flex flex-col">
+            <h3 className="text-slate-400 text-[8px] font-bold uppercase mb-1 tracking-widest flex-shrink-0">In Service</h3>
             {inTransaction.length > 0 ? (
-              <div className="space-y-0.5 max-h-16 overflow-y-auto">
+              <div className="space-y-0.5 overflow-y-auto flex-1 min-h-0">
                 {inTransaction.slice(0, 2).map(t => (
                   <div key={t.id} className="flex items-center gap-1 p-1 bg-blue-50 rounded border border-blue-200">
                     <span className="text-[10px] font-bold text-blue-900">#{t.queueNumber}</span>
@@ -254,12 +256,12 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
         </div>
       </div>
 
-      {/* Action Sidebar (Ultra-Compact) */}
-      <div className="lg:col-span-4 space-y-2 flex flex-col">
-        <div className="bg-slate-900 text-white p-3 rounded-xl relative overflow-hidden flex-shrink-0">
-          <div className="relative z-10">
-            <h3 className="text-slate-400 text-[9px] font-bold uppercase mb-2 tracking-widest">Next</h3>
-            <div className="flex flex-col items-center py-2 text-center">
+      {/* Action Sidebar - Dynamic Height */}
+      <div className="lg:col-span-4 flex flex-col gap-1.5" style={{ height: '100%' }}>
+        <div className="bg-slate-900 text-white rounded-xl relative overflow-hidden flex-shrink-0 p-3" style={{ height: 'calc((100vh - 200px) * 0.35)' }}>
+          <div className="relative z-10 h-full flex flex-col">
+            <h3 className="text-slate-400 text-[9px] font-bold uppercase mb-2 tracking-widest flex-shrink-0">Next</h3>
+            <div className="flex flex-col items-center justify-center flex-1 text-center">
               {confirmedNext ? (
                 <>
                   <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center text-xl font-black mb-1 shadow-[0_0_15px_rgba(34,197,94,0.4)]">
@@ -281,7 +283,7 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
               )}
             </div>
             
-            <div className="mt-3 pt-2 border-t border-slate-800">
+            <div className="mt-auto pt-2 border-t border-slate-800 flex-shrink-0">
               <button 
                 disabled={!nextUp || !!confirmedNext || inBuildingCount >= maxInBuilding}
                 onClick={() => nextUp && updateStatus(nextUp.id, TicketStatus.ELIGIBLE_FOR_ENTRY, 'reception', 'Called by reception')}
