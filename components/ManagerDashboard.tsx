@@ -20,11 +20,9 @@ interface PeakAnalytics {
   peakMonthOfYear: { month: number; year: number; count: number };
   peakQuarterOfYear: { quarter: number; year: number; count: number };
   averages: {
-    perDay: number;
-    perWeek: number;
-    perMonth: number;
-    perQuarter: number;
-    perYear: number;
+    waitTime: number; // Average wait time in minutes
+    customersPerDay: number;
+    noShowsPerDay: number;
   };
 }
 
@@ -217,19 +215,24 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ tickets, branch, on
     }
 
     const daysDiff = Math.max(1, Math.ceil((latestDate.getTime() - earliestDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
-    const weeksDiff = Math.max(1, daysDiff / 7);
-    const monthsDiff = Math.max(1, (latestDate.getFullYear() - earliestDate.getFullYear()) * 12 + 
-      (latestDate.getMonth() - earliestDate.getMonth()) + 1);
-    const quartersDiff = Math.max(1, (latestDate.getFullYear() - earliestDate.getFullYear()) * 4 + 
-      (getQuarter(latestDate) - getQuarter(earliestDate)) + 1);
-    const yearsDiff = Math.max(1, latestDate.getFullYear() - earliestDate.getFullYear() + 1);
+    
+    // Calculate average wait time
+    const ticketsWithWaitTime = branchTickets.filter(t => t.waitTimeMinutes !== undefined);
+    const avgWaitTime = ticketsWithWaitTime.length > 0
+      ? ticketsWithWaitTime.reduce((sum, t) => sum + (t.waitTimeMinutes || 0), 0) / ticketsWithWaitTime.length
+      : 0;
+
+    // Calculate average customers per day
+    const avgCustomersPerDay = branchTickets.length / daysDiff;
+
+    // Calculate average no-shows per day
+    const noShowTickets = branchTickets.filter(t => t.isNoShow === true);
+    const avgNoShowsPerDay = noShowTickets.length / daysDiff;
 
     const averages = {
-      perDay: branchTickets.length / daysDiff,
-      perWeek: branchTickets.length / weeksDiff,
-      perMonth: branchTickets.length / monthsDiff,
-      perQuarter: branchTickets.length / quartersDiff,
-      perYear: branchTickets.length / yearsDiff,
+      waitTime: Math.round(avgWaitTime * 10) / 10, // Round to 1 decimal
+      customersPerDay: Math.round(avgCustomersPerDay * 10) / 10,
+      noShowsPerDay: Math.round(avgNoShowsPerDay * 10) / 10,
     };
 
     return {
@@ -349,31 +352,23 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ tickets, branch, on
         </div>
       </div>
 
-      {/* Average Customers */}
+      {/* Averages */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
         <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-          <BarChart3 size={20} /> Average Customers
+          <BarChart3 size={20} /> Averages
         </h3>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="p-4 bg-blue-50 rounded-xl">
-            <p className="text-xs text-slate-500 font-bold uppercase mb-1">Per Day</p>
-            <p className="text-2xl font-black text-blue-600">{analytics.averages.perDay.toFixed(1)}</p>
+            <p className="text-xs text-slate-500 font-bold uppercase mb-1">Avg Wait Time</p>
+            <p className="text-2xl font-black text-blue-600">{analytics.averages.waitTime.toFixed(1)} min</p>
           </div>
           <div className="p-4 bg-blue-50 rounded-xl">
-            <p className="text-xs text-slate-500 font-bold uppercase mb-1">Per Week</p>
-            <p className="text-2xl font-black text-blue-600">{analytics.averages.perWeek.toFixed(1)}</p>
+            <p className="text-xs text-slate-500 font-bold uppercase mb-1">Avg Customers Per Day</p>
+            <p className="text-2xl font-black text-blue-600">{analytics.averages.customersPerDay.toFixed(1)}</p>
           </div>
           <div className="p-4 bg-blue-50 rounded-xl">
-            <p className="text-xs text-slate-500 font-bold uppercase mb-1">Per Month</p>
-            <p className="text-2xl font-black text-blue-600">{analytics.averages.perMonth.toFixed(1)}</p>
-          </div>
-          <div className="p-4 bg-blue-50 rounded-xl">
-            <p className="text-xs text-slate-500 font-bold uppercase mb-1">Per Quarter</p>
-            <p className="text-2xl font-black text-blue-600">{analytics.averages.perQuarter.toFixed(1)}</p>
-          </div>
-          <div className="p-4 bg-blue-50 rounded-xl">
-            <p className="text-xs text-slate-500 font-bold uppercase mb-1">Per Year</p>
-            <p className="text-2xl font-black text-blue-600">{analytics.averages.perYear.toFixed(1)}</p>
+            <p className="text-xs text-slate-500 font-bold uppercase mb-1">Avg # No-Shows Per Day</p>
+            <p className="text-2xl font-black text-blue-600">{analytics.averages.noShowsPerDay.toFixed(1)}</p>
           </div>
         </div>
       </div>
