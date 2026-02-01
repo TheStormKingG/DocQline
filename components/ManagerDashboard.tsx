@@ -1,10 +1,12 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Ticket, BranchConfig } from '../types';
-import { BarChart3, TrendingUp, Calendar, Clock } from 'lucide-react';
+import { BarChart3, TrendingUp, Calendar, Clock, Database } from 'lucide-react';
+import { generateMockTickets } from '../utils/mockData';
 
 interface ManagerDashboardProps {
   tickets: Ticket[];
   branch: BranchConfig;
+  onAddMockData?: (mockTickets: Ticket[]) => void;
 }
 
 interface PeakAnalytics {
@@ -23,7 +25,17 @@ interface PeakAnalytics {
   };
 }
 
-const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ tickets, branch }) => {
+const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ tickets, branch, onAddMockData }) => {
+  const [showMockButton, setShowMockButton] = useState(true);
+  
+  const handleGenerateMockData = () => {
+    const mockTickets = generateMockTickets(branch.id, 500);
+    if (onAddMockData) {
+      onAddMockData(mockTickets);
+      setShowMockButton(false);
+    }
+  };
+
   const analytics = useMemo(() => {
     const branchTickets = tickets.filter(t => t.branchId === branch.id);
     
@@ -189,8 +201,24 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ tickets, branch }) 
 
   if (!analytics) {
     return (
-      <div className="text-center py-12">
-        <p className="text-slate-500">No data available yet</p>
+      <div className="space-y-6">
+        <div className="flex items-center gap-3 mb-6">
+          <BarChart3 size={32} className="text-blue-600" />
+          <h2 className="text-3xl font-black text-slate-800">Analytics Dashboard</h2>
+        </div>
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-12 text-center">
+          <Database size={48} className="mx-auto text-slate-300 mb-4" />
+          <p className="text-lg text-slate-600 mb-2">No data available yet</p>
+          <p className="text-sm text-slate-500 mb-6">Generate mock data to see analytics in action</p>
+          {showMockButton && onAddMockData && (
+            <button
+              onClick={handleGenerateMockData}
+              className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center gap-2 mx-auto"
+            >
+              <Database size={20} /> Generate Mock Data (500 tickets)
+            </button>
+          )}
+        </div>
       </div>
     );
   }

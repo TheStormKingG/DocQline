@@ -424,6 +424,21 @@ const App: React.FC = () => {
     await updateTicketStatus(id, TicketStatus.IN_BUILDING, 'customer', 'Customer confirmed entry via app');
   };
 
+  const handleAddMockData = async (mockTickets: Ticket[]) => {
+    // Save mock tickets to Supabase (with localStorage fallback)
+    for (const ticket of mockTickets) {
+      await saveTicketToSupabase(ticket);
+    }
+    
+    // Update local state
+    setTickets(prev => {
+      // Combine existing tickets with mock tickets, avoiding duplicates
+      const existingIds = new Set(prev.map(t => t.id));
+      const newTickets = mockTickets.filter(t => !existingIds.has(t.id));
+      return [...prev, ...newTickets];
+    });
+  };
+
   const submitFeedback = async (id: string, stars: number) => {
     // Update in Supabase (with localStorage fallback)
     await updateTicketInSupabase(id, { feedbackStars: stars });
@@ -565,7 +580,7 @@ const App: React.FC = () => {
       )}
 
       {view === 'manager' && (
-        <ManagerDashboard tickets={tickets} branch={selectedBranch} />
+        <ManagerDashboard tickets={tickets} branch={selectedBranch} onAddMockData={handleAddMockData} />
       )}
     </Layout>
   );
