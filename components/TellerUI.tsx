@@ -69,7 +69,7 @@ const TellerUI: React.FC<TellerUIProps> = ({
     <div className="max-w-4xl mx-auto">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Current Transaction Card */}
-        <div className={`p-8 rounded-[2rem] border-2 transition-all ${
+        <div className={`p-8 rounded-[2rem] border-2 transition-all flex flex-col ${
           activeTransaction ? 'bg-blue-600 border-blue-600 text-white shadow-xl' : 'bg-white border-dashed border-slate-200 text-slate-300'
         }`}>
           <div className="flex justify-between items-start mb-12">
@@ -104,17 +104,6 @@ const TellerUI: React.FC<TellerUIProps> = ({
                   <p className="font-bold">{activeTransaction.serviceCategory.replace('_', ' ')}</p>
                 </div>
               )}
-              <button 
-                onClick={async () => {
-                  await handleFinishTransaction();
-                  if (nextReady) {
-                    handleCallNext();
-                  }
-                }}
-                className="w-full py-5 bg-white text-blue-600 rounded-2xl font-black flex items-center justify-center gap-3 hover:bg-slate-50 transition-all shadow-lg"
-              >
-                <CheckCircle size={24} /> Complete Transaction + Call Next
-              </button>
             </div>
           ) : (
             <div className="h-48 flex flex-col items-center justify-center text-center opacity-50">
@@ -122,6 +111,28 @@ const TellerUI: React.FC<TellerUIProps> = ({
               <p className="font-medium">Please wait for next customer to arrive at counter.</p>
             </div>
           )}
+          
+          {/* Complete Transaction + Call Next Button - Always Visible */}
+          <div className="mt-auto pt-6">
+            <button 
+              disabled={!activeTransaction}
+              onClick={async () => {
+                if (activeTransaction) {
+                  await handleFinishTransaction();
+                  if (nextReady) {
+                    handleCallNext();
+                  }
+                }
+              }}
+              className={`w-full py-5 rounded-2xl font-black flex items-center justify-center gap-3 transition-all shadow-lg ${
+                activeTransaction 
+                  ? 'bg-white text-blue-600 hover:bg-slate-50' 
+                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+              }`}
+            >
+              <CheckCircle size={24} /> Complete Transaction + Call Next
+            </button>
+          </div>
         </div>
 
         {/* Up Next / Preparation */}
