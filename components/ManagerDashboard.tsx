@@ -369,11 +369,7 @@ interface DataViewProps {
 }
 
 const DataView: React.FC<DataViewProps> = ({ selectedDate, setSelectedDate, data }) => {
-  const formatHour = (hour: number): string => {
-    if (hour === 12) return '12 PM';
-    if (hour > 12) return `${hour - 12} PM`;
-    return `${hour} AM`;
-  };
+  const [showCalendar, setShowCalendar] = useState(false);
 
   const formatDate = (date: Date): string => {
     return date.toLocaleDateString('en-US', { 
@@ -384,28 +380,52 @@ const DataView: React.FC<DataViewProps> = ({ selectedDate, setSelectedDate, data
     });
   };
 
+  const formatDateShort = (date: Date): string => {
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
   // Simple date picker
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newDate = new Date(e.target.value);
     setSelectedDate(newDate);
+    setShowCalendar(false);
   };
 
   return (
-    <div className="space-y-6">
-      {/* Date Picker */}
+    <>
+      {/* Peak Hours Line Graph */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-        <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-          <Calendar size={20} /> Select Date
-        </h3>
-        <div className="flex items-center gap-4">
-          <input
-            type="date"
-            value={selectedDate.toISOString().split('T')[0]}
-            onChange={handleDateChange}
-            className="px-4 py-2 border border-slate-300 rounded-lg bg-white text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-          <p className="text-slate-600">{formatDate(selectedDate)}</p>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <Clock size={20} /> Peak Hours (8 AM - 4 PM)
+          </h3>
+          <div className="relative">
+            <button
+              onClick={() => setShowCalendar(!showCalendar)}
+              className="px-4 py-2 border border-slate-300 rounded-lg bg-white text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center gap-2"
+            >
+              <Calendar size={16} />
+              {formatDateShort(selectedDate)}
+            </button>
+            {showCalendar && (
+              <div className="absolute right-0 mt-2 bg-white border border-slate-300 rounded-lg shadow-lg z-10 p-4">
+                <input
+                  type="date"
+                  value={selectedDate.toISOString().split('T')[0]}
+                  onChange={handleDateChange}
+                  className="px-4 py-2 border border-slate-300 rounded-lg bg-white text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  autoFocus
+                />
+                <p className="text-xs text-slate-500 mt-2">{formatDate(selectedDate)}</p>
+              </div>
+            )}
+          </div>
         </div>
+        <PeakHoursLineGraph data={data.peakHours} type="hours" />
       </div>
 
       {/* Metrics Cards */}
@@ -440,15 +460,7 @@ const DataView: React.FC<DataViewProps> = ({ selectedDate, setSelectedDate, data
           </div>
         </div>
       </div>
-
-      {/* Peak Hours for Selected Day */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-        <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-          <Clock size={20} /> Peak Hours (8 AM - 4 PM)
-        </h3>
-        <PeakHoursLineGraph data={data.peakHours} type="hours" />
-      </div>
-    </div>
+    </>
   );
 };
 
