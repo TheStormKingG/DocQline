@@ -72,36 +72,33 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-full overflow-hidden">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 h-full overflow-hidden">
       {/* Queue Grid */}
-      <div className="lg:col-span-8 space-y-3 flex flex-col overflow-hidden">
-        {/* Compact Header */}
+      <div className="lg:col-span-8 space-y-2 flex flex-col overflow-hidden">
+        {/* Ultra-Compact Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Building2 size={18} className="text-slate-500" />
-            <h2 className="text-lg font-bold">
-              Queue Overview - {branch.name}
-              <span className="text-xs font-normal text-slate-400 ml-2">
-                ({remoteWaiting.length + eligibleForEntry.length + inBuilding.length} Active)
+          <div className="flex items-center gap-1.5">
+            <Building2 size={14} className="text-slate-500" />
+            <h2 className="text-sm font-bold">
+              {branch.name}
+              <span className="text-[10px] font-normal text-slate-400 ml-1.5">
+                ({remoteWaiting.length + eligibleForEntry.length + inBuilding.length})
               </span>
             </h2>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg">
-            <Users size={16} className="text-blue-600" />
-            <div>
-              <p className="text-[10px] text-blue-600 font-bold uppercase">Inside</p>
-              <p className="text-base font-black text-blue-700">
-                {inBuildingCount}/{maxInBuilding}
-              </p>
-            </div>
+          <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 border border-blue-200 rounded">
+            <Users size={12} className="text-blue-600" />
+            <p className="text-xs font-black text-blue-700">
+              {inBuildingCount}/{maxInBuilding}
+            </p>
           </div>
         </div>
         
-        {/* In-Building Capacity Grid - 9 Spots (Compact) */}
-        <div className="p-3 bg-white rounded-xl shadow-sm border border-slate-100">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">In-Building ({inBuildingCount}/{maxInBuilding})</h3>
-            <div className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+        {/* In-Building Capacity Grid - 9 Spots (Ultra-Compact) */}
+        <div className="p-2 bg-white rounded-lg shadow-sm border border-slate-100">
+          <div className="flex items-center justify-between mb-1.5">
+            <h3 className="text-slate-400 text-[9px] font-bold uppercase tracking-widest">In-Building ({inBuildingCount}/{maxInBuilding})</h3>
+            <div className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${
               inBuildingCount >= maxInBuilding 
                 ? 'bg-red-100 text-red-700' 
                 : inBuildingCount >= maxInBuilding * 0.8
@@ -111,7 +108,7 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
               {inBuildingCount >= maxInBuilding ? 'FULL' : `${maxInBuilding - inBuildingCount} open`}
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-1.5">
             {Array.from({ length: maxInBuilding }).map((_, index) => {
               const spotNumber = index + 1;
               const sortedInBuilding = [...inBuilding].sort((a, b) => a.queueNumber - b.queueNumber);
@@ -121,7 +118,7 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
                 <div
                   key={index}
                   onClick={() => customerInSpot && setSelectedTicket(customerInSpot)}
-                  className={`aspect-square rounded-lg flex flex-col items-center justify-center border-2 transition-all ${
+                  className={`aspect-square rounded-md flex flex-col items-center justify-center border-2 transition-all ${
                     customerInSpot 
                       ? 'bg-green-50 border-green-300 cursor-pointer hover:border-green-400' 
                       : 'border-dashed border-slate-200 bg-slate-50'
@@ -129,15 +126,15 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
                 >
                   {customerInSpot ? (
                     <>
-                      <span className="text-lg font-black text-green-700">{customerInSpot.queueNumber}</span>
-                      <span className="text-[9px] uppercase font-bold tracking-tighter text-green-600 mt-0.5">
-                        {customerInSpot.name.split(' ')[0].substring(0, 8)}
+                      <span className="text-sm font-black text-green-700">{customerInSpot.queueNumber}</span>
+                      <span className="text-[8px] uppercase font-bold tracking-tighter text-green-600 mt-0.5">
+                        {customerInSpot.name.split(' ')[0].substring(0, 6)}
                       </span>
                     </>
                   ) : (
                     <>
-                      <span className="text-slate-300 text-sm font-black">#{spotNumber}</span>
-                      <span className="text-[9px] uppercase font-bold tracking-tighter text-slate-300 mt-0.5">
+                      <span className="text-slate-300 text-xs font-black">#{spotNumber}</span>
+                      <span className="text-[8px] uppercase font-bold tracking-tighter text-slate-300 mt-0.5">
                         Empty
                       </span>
                     </>
@@ -148,161 +145,160 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
           </div>
         </div>
 
-        {/* Remote Waiting Queue (Compact, Scrollable) */}
-        <div className="p-3 bg-white rounded-xl shadow-sm border border-slate-100 flex-1 flex flex-col min-h-0">
-          <h3 className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-2">
-            Remote Waiting ({remoteWaiting.length})
+        {/* Remote Waiting Queue (Ultra-Compact, Scrollable) */}
+        <div className="p-2 bg-white rounded-lg shadow-sm border border-slate-100 flex-1 flex flex-col min-h-0">
+          <h3 className="text-slate-400 text-[9px] font-bold uppercase tracking-widest mb-1.5">
+            Remote ({remoteWaiting.length})
           </h3>
           {remoteWaiting.length > 0 ? (
-            <div className="grid grid-cols-6 lg:grid-cols-8 gap-2 overflow-y-auto flex-1">
+            <div className="grid grid-cols-8 lg:grid-cols-10 gap-1.5 overflow-y-auto flex-1">
               {remoteWaiting.map(ticket => (
                 <div 
                   key={ticket.id}
                   onClick={() => setSelectedTicket(ticket)}
-                  className="aspect-square rounded-lg flex flex-col items-center justify-center border-2 border-slate-200 bg-slate-50 text-slate-400 hover:border-slate-300 hover:bg-slate-100 transition-all cursor-pointer"
+                  className="aspect-square rounded-md flex flex-col items-center justify-center border-2 border-slate-200 bg-slate-50 text-slate-400 hover:border-slate-300 hover:bg-slate-100 transition-all cursor-pointer"
                 >
-                  <span className="text-base font-black">{ticket.queueNumber}</span>
-                  <span className="text-[9px] uppercase font-bold tracking-tighter opacity-70 mt-0.5">
-                    {ticket.name.split(' ')[0].substring(0, 6)}
+                  <span className="text-sm font-black">{ticket.queueNumber}</span>
+                  <span className="text-[8px] uppercase font-bold tracking-tighter opacity-70 mt-0.5">
+                    {ticket.name.split(' ')[0].substring(0, 5)}
                   </span>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-slate-300 italic text-xs text-center py-4">No customers in remote waiting queue.</p>
+            <p className="text-slate-300 italic text-[9px] text-center py-2">No remote waiting</p>
           )}
         </div>
 
-        {/* Compact Status Sections */}
-        <div className="grid grid-cols-3 gap-2">
-          <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100">
-            <h3 className="text-slate-400 text-[9px] font-bold uppercase mb-2 tracking-widest">Eligible</h3>
+        {/* Ultra-Compact Status Sections - Single Row */}
+        <div className="grid grid-cols-3 gap-1.5">
+          <div className="p-1.5 bg-white rounded-lg shadow-sm border border-slate-100">
+            <h3 className="text-slate-400 text-[8px] font-bold uppercase mb-1 tracking-widest">Eligible</h3>
             {eligibleForEntry.length > 0 ? (
-              <div className="space-y-1 max-h-24 overflow-y-auto">
-                {eligibleForEntry.slice(0, 3).map(t => (
-                  <div key={t.id} className="flex items-center justify-between p-1.5 bg-orange-50 rounded border border-orange-200">
-                    <span className="text-xs font-bold text-slate-800">#{t.queueNumber}</span>
+              <div className="space-y-0.5 max-h-16 overflow-y-auto">
+                {eligibleForEntry.slice(0, 2).map(t => (
+                  <div key={t.id} className="flex items-center justify-between p-1 bg-orange-50 rounded border border-orange-200">
+                    <span className="text-[10px] font-bold text-slate-800">#{t.queueNumber}</span>
                     <button
                       onClick={() => handleMarkEntered(t.id)}
                       disabled={inBuildingCount >= maxInBuilding}
-                      className="p-1 bg-green-100 text-green-600 rounded hover:bg-green-200 disabled:opacity-50"
+                      className="p-0.5 bg-green-100 text-green-600 rounded hover:bg-green-200 disabled:opacity-50"
                       title="Mark Entered"
                     >
-                      <LogIn size={12} />
+                      <LogIn size={10} />
                     </button>
                   </div>
                 ))}
-                {eligibleForEntry.length > 3 && (
-                  <p className="text-[9px] text-slate-400 text-center">+{eligibleForEntry.length - 3} more</p>
+                {eligibleForEntry.length > 2 && (
+                  <p className="text-[8px] text-slate-400 text-center">+{eligibleForEntry.length - 2}</p>
                 )}
               </div>
             ) : (
-              <p className="text-slate-300 italic text-[9px]">None</p>
+              <p className="text-slate-300 italic text-[8px]">None</p>
             )}
           </div>
 
-          <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100">
-            <h3 className="text-slate-400 text-[9px] font-bold uppercase mb-2 tracking-widest">Called</h3>
+          <div className="p-1.5 bg-white rounded-lg shadow-sm border border-slate-100">
+            <h3 className="text-slate-400 text-[8px] font-bold uppercase mb-1 tracking-widest">Called</h3>
             {called.length > 0 ? (
-              <div className="space-y-1 max-h-24 overflow-y-auto">
-                {called.slice(0, 3).map(t => (
-                  <div key={t.id} className="flex items-center justify-between p-1.5 bg-slate-50 rounded border border-slate-200">
-                    <span className="text-xs font-bold text-slate-800">#{t.queueNumber}</span>
-                    <div className="flex gap-1">
+              <div className="space-y-0.5 max-h-16 overflow-y-auto">
+                {called.slice(0, 2).map(t => (
+                  <div key={t.id} className="flex items-center justify-between p-1 bg-slate-50 rounded border border-slate-200">
+                    <span className="text-[10px] font-bold text-slate-800">#{t.queueNumber}</span>
+                    <div className="flex gap-0.5">
                       <button 
                         onClick={() => handleMarkEntered(t.id)}
                         disabled={inBuildingCount >= maxInBuilding}
-                        className="p-1 bg-green-100 text-green-600 rounded hover:bg-green-200 disabled:opacity-50"
+                        className="p-0.5 bg-green-100 text-green-600 rounded hover:bg-green-200 disabled:opacity-50"
                         title="Mark Entered"
                       >
-                        <LogIn size={12} />
+                        <LogIn size={10} />
                       </button>
                       <button 
                         onClick={() => updateStatus(t.id, TicketStatus.REMOTE_WAITING, 'reception', 'No show')}
-                        className="p-1 bg-red-100 text-red-600 rounded hover:bg-red-200"
+                        className="p-0.5 bg-red-100 text-red-600 rounded hover:bg-red-200"
                         title="No Show"
                       >
-                        <UserX size={12} />
+                        <UserX size={10} />
                       </button>
                     </div>
                   </div>
                 ))}
-                {called.length > 3 && (
-                  <p className="text-[9px] text-slate-400 text-center">+{called.length - 3} more</p>
+                {called.length > 2 && (
+                  <p className="text-[8px] text-slate-400 text-center">+{called.length - 2}</p>
                 )}
               </div>
             ) : (
-              <p className="text-slate-300 italic text-[9px]">None</p>
+              <p className="text-slate-300 italic text-[8px]">None</p>
             )}
           </div>
 
-          <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100">
-            <h3 className="text-slate-400 text-[9px] font-bold uppercase mb-2 tracking-widest">In Service</h3>
+          <div className="p-1.5 bg-white rounded-lg shadow-sm border border-slate-100">
+            <h3 className="text-slate-400 text-[8px] font-bold uppercase mb-1 tracking-widest">In Service</h3>
             {inTransaction.length > 0 ? (
-              <div className="space-y-1 max-h-24 overflow-y-auto">
-                {inTransaction.slice(0, 3).map(t => (
-                  <div key={t.id} className="flex items-center gap-1.5 p-1.5 bg-blue-50 rounded border border-blue-200">
-                    <span className="text-xs font-bold text-blue-900">#{t.queueNumber}</span>
-                    {t.tellerId && <span className="text-[9px] text-blue-600">{t.tellerId}</span>}
+              <div className="space-y-0.5 max-h-16 overflow-y-auto">
+                {inTransaction.slice(0, 2).map(t => (
+                  <div key={t.id} className="flex items-center gap-1 p-1 bg-blue-50 rounded border border-blue-200">
+                    <span className="text-[10px] font-bold text-blue-900">#{t.queueNumber}</span>
+                    {t.tellerId && <span className="text-[8px] text-blue-600">{t.tellerId}</span>}
                   </div>
                 ))}
-                {inTransaction.length > 3 && (
-                  <p className="text-[9px] text-slate-400 text-center">+{inTransaction.length - 3} more</p>
+                {inTransaction.length > 2 && (
+                  <p className="text-[8px] text-slate-400 text-center">+{inTransaction.length - 2}</p>
                 )}
               </div>
             ) : (
-              <p className="text-slate-300 italic text-[9px]">None</p>
+              <p className="text-slate-300 italic text-[8px]">None</p>
             )}
           </div>
         </div>
       </div>
 
-      {/* Action Sidebar (Compact) */}
-      <div className="lg:col-span-4 space-y-3 flex flex-col">
-        <div className="bg-slate-900 text-white p-4 rounded-2xl relative overflow-hidden flex-shrink-0">
+      {/* Action Sidebar (Ultra-Compact) */}
+      <div className="lg:col-span-4 space-y-2 flex flex-col">
+        <div className="bg-slate-900 text-white p-3 rounded-xl relative overflow-hidden flex-shrink-0">
           <div className="relative z-10">
-            <h3 className="text-slate-400 text-[10px] font-bold uppercase mb-3 tracking-widest">Confirmed Next</h3>
-            <div className="flex flex-col items-center py-3 text-center">
+            <h3 className="text-slate-400 text-[9px] font-bold uppercase mb-2 tracking-widest">Next</h3>
+            <div className="flex flex-col items-center py-2 text-center">
               {confirmedNext ? (
                 <>
-                  <div className="w-16 h-16 bg-green-500 rounded-2xl flex items-center justify-center text-2xl font-black mb-2 shadow-[0_0_20px_rgba(34,197,94,0.4)]">
+                  <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center text-xl font-black mb-1 shadow-[0_0_15px_rgba(34,197,94,0.4)]">
                     {confirmedNext.queueNumber}
                   </div>
-                  <p className="text-sm font-bold mb-1">{confirmedNext.name}</p>
+                  <p className="text-xs font-bold mb-0.5">{confirmedNext.name.split(' ')[0]}</p>
                   {confirmedNext.memberId && (
-                    <p className="text-[10px] text-green-300 mb-1">ID: {confirmedNext.memberId}</p>
+                    <p className="text-[9px] text-green-300 mb-0.5">ID: {confirmedNext.memberId}</p>
                   )}
-                  <p className="text-green-400 text-[10px] font-medium">Ready for Teller</p>
+                  <p className="text-green-400 text-[9px] font-medium">Ready</p>
                 </>
               ) : (
                 <>
-                  <div className="w-16 h-16 border-2 border-dashed border-slate-700 rounded-2xl flex items-center justify-center text-slate-700 mb-2">
-                    <UserCheck size={20} />
+                  <div className="w-12 h-12 border-2 border-dashed border-slate-700 rounded-xl flex items-center justify-center text-slate-700 mb-1">
+                    <UserCheck size={16} />
                   </div>
-                  <p className="text-slate-500 italic text-xs">Awaiting confirmation...</p>
+                  <p className="text-slate-500 italic text-[9px]">Awaiting...</p>
                 </>
               )}
             </div>
             
-            <div className="mt-4 pt-4 border-t border-slate-800">
-              <h4 className="text-[10px] font-bold text-slate-500 uppercase mb-2">Actions</h4>
+            <div className="mt-3 pt-2 border-t border-slate-800">
               <button 
                 disabled={!nextUp || !!confirmedNext || inBuildingCount >= maxInBuilding}
                 onClick={() => nextUp && updateStatus(nextUp.id, TicketStatus.ELIGIBLE_FOR_ENTRY, 'reception', 'Called by reception')}
-                className="w-full py-2.5 bg-white text-slate-900 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-100 transition-all disabled:opacity-30 text-sm"
+                className="w-full py-2 bg-white text-slate-900 rounded-lg font-bold flex items-center justify-center gap-1.5 hover:bg-slate-100 transition-all disabled:opacity-30 text-xs"
               >
-                Make Eligible <ArrowRight size={14} />
+                Make Eligible <ArrowRight size={12} />
               </button>
             </div>
           </div>
-          <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-blue-600 rounded-full blur-[60px] opacity-20" />
+          <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-blue-600 rounded-full blur-[40px] opacity-20" />
         </div>
 
-        <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl flex-shrink-0">
-          <div className="flex gap-2">
-            <Info className="text-blue-500 shrink-0" size={14} />
-            <p className="text-[10px] text-blue-700 leading-tight">
-              Calling starts <strong>{branch.gracePeriodMinutes}-min countdown</strong>. Polled at 1-min mark.
+        <div className="p-2 bg-blue-50 border border-blue-100 rounded-lg flex-shrink-0">
+          <div className="flex gap-1.5">
+            <Info className="text-blue-500 shrink-0" size={12} />
+            <p className="text-[9px] text-blue-700 leading-tight">
+              <strong>{branch.gracePeriodMinutes}-min</strong> countdown. Polled at 1-min.
             </p>
           </div>
         </div>
