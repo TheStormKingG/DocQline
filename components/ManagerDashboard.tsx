@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { Ticket, BranchConfig } from '../types';
-import { BarChart3, TrendingUp, Calendar, Clock, Database } from 'lucide-react';
+import { BarChart3, TrendingUp, Calendar, Clock } from 'lucide-react';
 import { generateMockTickets } from '../utils/mockData';
 
 interface ManagerDashboardProps {
@@ -11,6 +11,7 @@ interface ManagerDashboardProps {
 
 interface PeakAnalytics {
   peakHoursByDay: { [day: string]: { hour: number; count: number }[] };
+  peakHoursData: { hour: number; count: number }[]; // For line graph (8am-4pm)
   peakDayOfWeek: { day: string; count: number };
   peakWeekOfMonth: { week: number; month: number; year: number; count: number };
   peakMonthOfQuarter: { month: number; quarter: number; year: number; count: number };
@@ -26,15 +27,14 @@ interface PeakAnalytics {
 }
 
 const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ tickets, branch, onAddMockData }) => {
-  const [showMockButton, setShowMockButton] = useState(true);
-  
-  const handleGenerateMockData = () => {
-    const mockTickets = generateMockTickets(branch.id, 500);
-    if (onAddMockData) {
+  // Auto-generate mock data if no tickets exist
+  useEffect(() => {
+    const branchTickets = tickets.filter(t => t.branchId === branch.id);
+    if (branchTickets.length === 0 && onAddMockData) {
+      const mockTickets = generateMockTickets(branch.id, 500);
       onAddMockData(mockTickets);
-      setShowMockButton(false);
     }
-  };
+  }, [tickets, branch.id, onAddMockData]);
 
   const analytics = useMemo(() => {
     const branchTickets = tickets.filter(t => t.branchId === branch.id);
@@ -127,6 +127,22 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ tickets, branch, on
       peakHoursByDay[day] = hours;
     });
 
+    // Calculate peak hours data for line graph (8am-4pm)
+    const peakHoursData: { hour: number; count: number }[] = [];
+    const allHoursCount: { [hour: number]: number } = {};
+    branchTickets.forEach(ticket => {
+      const hour = new Date(ticket.joinedAt).getHours();
+      if (hour >= 8 && hour <= 16) {
+        allHoursCount[hour] = (allHoursCount[hour] || 0) + 1;
+      }
+    });
+    for (let hour = 8; hour <= 16; hour++) {
+      peakHoursData.push({
+        hour,
+        count: allHoursCount[hour] || 0
+      });
+    }
+
     // Find peak day of week
     const peakDayEntry = Object.entries(dayCounts)
       .map(([day, count]) => ({ day, count }))
@@ -190,6 +206,7 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ tickets, branch, on
 
     return {
       peakHoursByDay,
+      peakHoursData,
       peakDayOfWeek: peakDayEntry,
       peakWeekOfMonth: peakWeekEntry,
       peakMonthOfQuarter: peakMonthOfQuarterEntry,
@@ -200,32 +217,11 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ tickets, branch, on
   }, [tickets, branch.id]);
 
   if (!analytics) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-3 mb-6">
-          <BarChart3 size={32} className="text-blue-600" />
-          <h2 className="text-3xl font-black text-slate-800">Analytics Dashboard</h2>
-        </div>
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-12 text-center">
-          <Database size={48} className="mx-auto text-slate-300 mb-4" />
-          <p className="text-lg text-slate-600 mb-2">No data available yet</p>
-          <p className="text-sm text-slate-500 mb-6">Generate mock data to see analytics in action</p>
-          {showMockButton && onAddMockData && (
-            <button
-              onClick={handleGenerateMockData}
-              className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center gap-2 mx-auto"
-            >
-              <Database size={20} /> Generate Mock Data (500 tickets)
-            </button>
-          )}
-        </div>
-      </div>
-    );
+    return null; // Will auto-generate mock data via useEffect
   }
 
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
     'July', 'August', 'September', 'October', 'November', 'December'];
-  const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
   return (
     <div className="space-y-6">
@@ -234,30 +230,12 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ tickets, branch, on
         <h2 className="text-3xl font-black text-slate-800">Analytics Dashboard</h2>
       </div>
 
-      {/* Peak Hours by Day of Week */}
+      {/* Peak Hours Line Graph */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
         <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-          <Clock size={20} /> Peak Hours by Day of Week
+          <Clock size={20} /> Peak Hours (8 AM - 4 PM)
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {dayOrder.map(day => {
-            const hours = analytics.peakHoursByDay[day] || [];
-            if (hours.length === 0) return null;
-            return (
-              <div key={day} className="p-4 bg-slate-50 rounded-xl">
-                <p className="font-bold text-slate-800 mb-2">{day}</p>
-                <div className="space-y-1">
-                  {hours.map(({ hour, count }) => (
-                    <div key={hour} className="flex items-center justify-between text-sm">
-                      <span className="text-slate-600">{hour}:00</span>
-                      <span className="font-bold text-slate-800">{count} customers</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <PeakHoursLineGraph data={analytics.peakHoursData} />
       </div>
 
       {/* Peak Periods */}
@@ -353,6 +331,168 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ tickets, branch, on
           </div>
         </div>
       </div>
+    </div>
+  );
+};
+
+// Line Graph Component for Peak Hours
+interface PeakHoursLineGraphProps {
+  data: { hour: number; count: number }[];
+}
+
+const PeakHoursLineGraph: React.FC<PeakHoursLineGraphProps> = ({ data }) => {
+  const width = 800;
+  const height = 300;
+  const padding = { top: 40, right: 40, bottom: 60, left: 60 };
+  const graphWidth = width - padding.left - padding.right;
+  const graphHeight = height - padding.top - padding.bottom;
+
+  const maxCount = Math.max(...data.map(d => d.count), 1);
+  const minCount = 0;
+
+  // Convert hour to label (8 -> "8 AM", 12 -> "12 PM", 16 -> "4 PM")
+  const formatHour = (hour: number): string => {
+    if (hour === 12) return '12 PM';
+    if (hour > 12) return `${hour - 12} PM`;
+    return `${hour} AM`;
+  };
+
+  // Calculate points for the line
+  const points = data.map((d, index) => {
+    const x = padding.left + (index / (data.length - 1)) * graphWidth;
+    const y = padding.top + graphHeight - ((d.count - minCount) / (maxCount - minCount || 1)) * graphHeight;
+    return { x, y, hour: d.hour, count: d.count };
+  });
+
+  // Create path for the line
+  const pathData = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+
+  return (
+    <div className="w-full overflow-x-auto">
+      <svg width={width} height={height} className="mx-auto">
+        {/* Y-axis label */}
+        <text
+          x={padding.left / 2}
+          y={padding.top + graphHeight / 2}
+          textAnchor="middle"
+          className="text-xs fill-slate-600"
+          transform={`rotate(-90 ${padding.left / 2} ${padding.top + graphHeight / 2})`}
+        >
+          Number of Customers
+        </text>
+
+        {/* X-axis label */}
+        <text
+          x={width / 2}
+          y={height - 10}
+          textAnchor="middle"
+          className="text-xs fill-slate-600"
+        >
+          Hours
+        </text>
+
+        {/* Grid lines and Y-axis labels */}
+        {[0, 1, 2, 3, 4, 5].map(i => {
+          const value = Math.round((maxCount / 5) * i);
+          const y = padding.top + graphHeight - (i / 5) * graphHeight;
+          return (
+            <g key={i}>
+              <line
+                x1={padding.left}
+                y1={y}
+                x2={width - padding.right}
+                y2={y}
+                stroke="#e2e8f0"
+                strokeWidth="1"
+              />
+              <text
+                x={padding.left - 10}
+                y={y + 4}
+                textAnchor="end"
+                className="text-xs fill-slate-500"
+              >
+                {value}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* X-axis labels (hours) */}
+        {data.map((d, index) => {
+          const x = padding.left + (index / (data.length - 1)) * graphWidth;
+          return (
+            <text
+              key={d.hour}
+              x={x}
+              y={height - padding.bottom + 20}
+              textAnchor="middle"
+              className="text-xs fill-slate-500"
+            >
+              {formatHour(d.hour)}
+            </text>
+          );
+        })}
+
+        {/* Grid lines for X-axis */}
+        {data.map((d, index) => {
+          const x = padding.left + (index / (data.length - 1)) * graphWidth;
+          return (
+            <line
+              key={d.hour}
+              x1={x}
+              y1={padding.top}
+              x2={x}
+              y2={height - padding.bottom}
+              stroke="#e2e8f0"
+              strokeWidth="1"
+            />
+          );
+        })}
+
+        {/* Line path */}
+        <path
+          d={pathData}
+          fill="none"
+          stroke="#3b82f6"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {/* Data points */}
+        {points.map((point, index) => (
+          <g key={index}>
+            <circle
+              cx={point.x}
+              cy={point.y}
+              r="4"
+              fill="#3b82f6"
+              stroke="white"
+              strokeWidth="2"
+            />
+            {/* Tooltip on hover */}
+            <title>{`${formatHour(point.hour)}: ${point.count} customers`}</title>
+          </g>
+        ))}
+
+        {/* Axes */}
+        <line
+          x1={padding.left}
+          y1={padding.top}
+          x2={padding.left}
+          y2={height - padding.bottom}
+          stroke="#64748b"
+          strokeWidth="2"
+        />
+        <line
+          x1={padding.left}
+          y1={height - padding.bottom}
+          x2={width - padding.right}
+          y2={height - padding.bottom}
+          stroke="#64748b"
+          strokeWidth="2"
+        />
+      </svg>
     </div>
   );
 };
