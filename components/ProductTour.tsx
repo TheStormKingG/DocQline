@@ -266,24 +266,23 @@ const ProductTour: React.FC<ProductTourProps> = ({ currentView }) => {
     return () => window.removeEventListener('start-tour', handleStartTour);
   }, [currentView]); // Include currentView to ensure tour steps are filtered correctly
 
-  if (!isRunning && !showWelcomeModal) {
-    return (
-      <button
-        onClick={handleHelpClick}
-        className="fixed bottom-4 right-4 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-all z-40 flex items-center gap-2"
-        title="Help / Tour"
-        data-tour="help-button"
-      >
-        <HelpCircle size={20} />
-        <span className="hidden sm:inline text-sm font-medium">Help</span>
-      </button>
-    );
-  }
-
   const currentStepData = filteredSteps[currentStep];
 
   return (
     <>
+      {/* Help Button - Always visible when not in welcome modal */}
+      {!showWelcomeModal && !isRunning && (
+        <button
+          onClick={handleHelpClick}
+          className="fixed bottom-4 right-4 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-all z-40 flex items-center gap-2"
+          title="Help / Tour"
+          data-tour="help-button"
+        >
+          <HelpCircle size={20} />
+          <span className="hidden sm:inline text-sm font-medium">Help</span>
+        </button>
+      )}
+
       {/* Welcome Modal */}
       {showWelcomeModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
@@ -390,8 +389,8 @@ const ProductTour: React.FC<ProductTourProps> = ({ currentView }) => {
           </div>
         </>
       )}
-    </>
-  );
-};
+      </>
+    );
+  }
 
 export default ProductTour;
