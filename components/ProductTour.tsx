@@ -278,7 +278,7 @@ const ProductTour: React.FC<ProductTourProps> = ({
           const customer11 = branchTickets.find(t => t.queueNumber === 11);
           if (customer11) {
             const oldStatus = customer11.status;
-            const oldCurrentCustomer = tickets.find(t => t.id === currentCustomerId)?.id || null;
+            const oldCurrentCustomer = currentCustomerId || null;
             // Switch to customer view first
             if (onSetView) onSetView('customer');
             await new Promise(resolve => setTimeout(resolve, 300));
