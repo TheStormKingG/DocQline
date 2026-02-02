@@ -72,13 +72,13 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
   };
 
   return (
-    <div className="flex flex-col gap-2 h-full overflow-hidden">
+    <div className="flex flex-col gap-2 h-full overflow-hidden" data-tour="reception-dashboard">
       {/* Top Row: Header, In-Building, and Now Serving */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 flex-shrink-0">
         {/* Left Side: Header and In-Building */}
         <div className="lg:col-span-8 flex flex-col gap-1.5">
           {/* In-Building Capacity Grid - 2 Rows of 5, 2x Bigger */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-100 flex-shrink-0 p-2" style={{ height: 'calc((100vh - 200px) * 0.30)' }}>
+          <div className="bg-white rounded-lg shadow-sm border border-slate-100 flex-shrink-0 p-2" style={{ height: 'calc((100vh - 200px) * 0.30)' }} data-tour="capacity-gate">
             <div className="flex items-center justify-between mb-2 h-5">
               <h3 className="text-slate-400 text-[9px] font-bold uppercase tracking-widest">In-Building ({inBuildingCount}/10)</h3>
             </div>

@@ -91,6 +91,17 @@ export const Layout: React.FC<LayoutProps> = ({ children, view, setView, resetAl
         <p className="text-center text-slate-500 text-xs mt-1 font-semibold">
           We Are Not A Bank, We Are Better!
         </p>
+        <p className="text-center mt-2">
+          <button
+            onClick={() => {
+              const event = new CustomEvent('start-tour');
+              window.dispatchEvent(event);
+            }}
+            className="text-xs text-blue-600 hover:text-blue-700 underline"
+          >
+            Help / Tour
+          </button>
+        </p>
       </footer>
     </div>
   );

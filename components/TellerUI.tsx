@@ -71,7 +71,7 @@ const TellerUI: React.FC<TellerUIProps> = ({
         {/* Current Transaction Card */}
         <div className={`p-8 rounded-[2rem] border-2 transition-all flex flex-col ${
           activeTransaction ? 'bg-blue-600 border-blue-600 text-white shadow-xl' : 'bg-white border-dashed border-slate-200 text-slate-300'
-        }`}>
+        }`} data-tour="teller-current">
           <div className="flex justify-between items-start mb-12">
             <div>
               <p className="text-xs font-bold uppercase tracking-widest opacity-70">Current Transaction</p>
@@ -129,6 +129,7 @@ const TellerUI: React.FC<TellerUIProps> = ({
                   ? 'bg-white text-blue-600 hover:bg-slate-50' 
                   : 'bg-slate-200 text-slate-400 cursor-not-allowed'
               }`}
+              data-tour="teller-complete"
             >
               <CheckCircle size={24} /> Complete Transaction + Call Next
             </button>

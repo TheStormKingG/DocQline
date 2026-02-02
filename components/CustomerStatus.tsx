@@ -105,7 +105,7 @@ const CustomerStatus: React.FC<CustomerStatusProps> = ({ ticket, allTickets, bra
   }
 
   return (
-    <div className="max-w-md mx-auto">
+    <div className="max-w-md mx-auto" data-tour="customer-status">
       <button 
         onClick={onCancel}
         className="flex items-center gap-2 text-slate-500 mb-6 hover:text-slate-800 transition-colors"
@@ -134,7 +134,7 @@ const CustomerStatus: React.FC<CustomerStatusProps> = ({ ticket, allTickets, bra
           </div>
           
           {isCalled ? (
-            <div className="mt-6 bg-white/10 rounded-xl p-4 border border-white/20">
+            <div className="mt-6 bg-white/10 rounded-xl p-4 border border-white/20" data-tour="customer-notification">
               <p className="text-sm font-bold">
                 {ticket.status === TicketStatus.ELIGIBLE_FOR_ENTRY ? 'YOU ARE NOW #10 - YOU MAY ENTER' : 'PLEASE ARRIVE AT COUNTER'}
               </p>
@@ -153,7 +153,7 @@ const CustomerStatus: React.FC<CustomerStatusProps> = ({ ticket, allTickets, bra
               <p className="text-lg mt-1">Waiting for teller</p>
             </div>
           ) : (
-            <div className="mt-6 flex gap-4">
+            <div className="mt-6 flex gap-4" data-tour="customer-eta">
               <div className="flex-1 bg-white/10 rounded-xl p-3 border border-white/20">
                 <p className="text-[10px] uppercase font-bold tracking-wider opacity-70">Ahead</p>
                 <div className="flex items-center gap-2">

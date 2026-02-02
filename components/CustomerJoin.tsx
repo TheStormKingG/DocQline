@@ -27,7 +27,7 @@ const CustomerJoin: React.FC<CustomerJoinProps> = ({ branches, onJoin }) => {
   };
 
   return (
-    <div className="max-w-md mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100">
+    <div className="max-w-md mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100" data-tour="customer-join">
       <div className="relative p-8 text-white overflow-hidden" style={{ minHeight: '280px' }}>
         {/* Cover Image Background */}
         <img 

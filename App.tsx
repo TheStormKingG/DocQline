@@ -5,6 +5,7 @@ import CustomerStatus from './components/CustomerStatus';
 import ReceptionDashboard from './components/ReceptionDashboard';
 import TellerUI from './components/TellerUI';
 import ManagerDashboard from './components/ManagerDashboard';
+import ProductTour from './components/ProductTour';
 import { Layout } from './components/Layout';
 import { 
   loadTicketsFromSupabase, 
@@ -530,59 +531,62 @@ const App: React.FC = () => {
   const metrics = calculateMetrics(selectedBranchId);
 
   return (
-    <Layout view={view} setView={setView} resetAll={resetAll} userRole={userRole} branchName={selectedBranch.name}>
-      {view === 'customer' && (
-        !currentTicket ? (
-          <CustomerJoin branches={BRANCHES.filter(b => !b.isPaused)} onJoin={addTicket} />
-        ) : (
-          <CustomerStatus 
-            ticket={currentTicket} 
-            allTickets={currentBranchTickets} 
-            branch={selectedBranch} 
-            onCancel={() => setCurrentCustomerId(null)}
-            onSubmitFeedback={submitFeedback}
-            onConfirmInBuilding={handleConfirmInBuilding}
-          />
-        )
-      )}
-
-      {view === 'receptionist' && (
-        <ReceptionDashboard 
-          tickets={tickets} 
-          updateStatus={updateTicketStatus}
-          updateTicket={updateTicket}
-          branch={selectedBranch}
-          inBuildingCount={getInBuildingCount(selectedBranchId)}
-          maxInBuilding={selectedBranch.maxInBuilding}
-        />
-      )}
-
-      {view === 'teller' && (
-        <div className="space-y-6">
-          <div className="flex items-center gap-4 mb-4">
-            <input
-              type="text"
-              value={tellerId}
-              onChange={(e) => setTellerId(e.target.value)}
-              placeholder="Teller ID"
-              className="px-4 py-2 border border-slate-200 rounded-lg"
+    <>
+      <ProductTour currentView={view} />
+      <Layout view={view} setView={setView} resetAll={resetAll} userRole={userRole} branchName={selectedBranch.name}>
+        {view === 'customer' && (
+          !currentTicket ? (
+            <CustomerJoin branches={BRANCHES.filter(b => !b.isPaused)} onJoin={addTicket} />
+          ) : (
+            <CustomerStatus 
+              ticket={currentTicket} 
+              allTickets={currentBranchTickets} 
+              branch={selectedBranch} 
+              onCancel={() => setCurrentCustomerId(null)}
+              onSubmitFeedback={submitFeedback}
+              onConfirmInBuilding={handleConfirmInBuilding}
             />
-          </div>
-          <TellerUI 
+          )
+        )}
+
+        {view === 'receptionist' && (
+          <ReceptionDashboard 
             tickets={tickets} 
             updateStatus={updateTicketStatus}
+            updateTicket={updateTicket}
             branch={selectedBranch}
-            tellerId={tellerId}
-            onPauseQueue={pauseQueue}
-            onFlagNoShow={flagNoShow}
+            inBuildingCount={getInBuildingCount(selectedBranchId)}
+            maxInBuilding={selectedBranch.maxInBuilding}
           />
-        </div>
-      )}
+        )}
 
-      {view === 'manager' && (
-        <ManagerDashboard tickets={tickets} branch={selectedBranch} onAddMockData={handleAddMockData} />
-      )}
-    </Layout>
+        {view === 'teller' && (
+          <div className="space-y-6">
+            <div className="flex items-center gap-4 mb-4">
+              <input
+                type="text"
+                value={tellerId}
+                onChange={(e) => setTellerId(e.target.value)}
+                placeholder="Teller ID"
+                className="px-4 py-2 border border-slate-200 rounded-lg"
+              />
+            </div>
+            <TellerUI 
+              tickets={tickets} 
+              updateStatus={updateTicketStatus}
+              branch={selectedBranch}
+              tellerId={tellerId}
+              onPauseQueue={pauseQueue}
+              onFlagNoShow={flagNoShow}
+            />
+          </div>
+        )}
+
+        {view === 'manager' && (
+          <ManagerDashboard tickets={tickets} branch={selectedBranch} onAddMockData={handleAddMockData} />
+        )}
+      </Layout>
+    </>
   );
 };
 
