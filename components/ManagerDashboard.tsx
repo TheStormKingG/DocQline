@@ -306,7 +306,7 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ tickets, branch, on
   }, [tickets, branch.id, selectedDate]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-tour="manager-dashboard">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <BarChart3 size={32} className="text-blue-600" />
@@ -322,6 +322,7 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ tickets, branch, on
                 ? 'bg-white text-blue-600 shadow-sm'
                 : 'text-slate-600 hover:text-slate-800'
             }`}
+            data-tour="manager-data-tab"
           >
             Data
           </button>
@@ -492,6 +493,7 @@ const DataView: React.FC<DataViewProps> = ({ selectedDate, setSelectedDate, data
             <button
               onClick={() => setShowCalendar(!showCalendar)}
               className="px-4 py-2 border border-slate-300 rounded-lg bg-white text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center gap-2"
+              data-tour="manager-date-picker"
             >
               <Calendar size={16} />
               {formatDateShort(selectedDate)}
@@ -620,7 +622,7 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ analytics, graphView, set
   return (
     <>
       {/* Peak Hours/Days/Months Line Graph */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6" data-tour="manager-graph">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
             <Clock size={20} />
@@ -644,7 +646,7 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ analytics, graphView, set
       </div>
 
       {/* Averages */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4" data-tour="manager-averages">
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
           <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
             <BarChart3 size={20} /> Avg Wait Time

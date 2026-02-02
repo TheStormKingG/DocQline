@@ -73,6 +73,7 @@ interface ProductTourProps {
   onUpdateStatus?: (id: string, status: any, triggeredBy?: 'system' | 'reception' | 'teller' | 'customer', reason?: string) => void;
   onSetCurrentCustomer?: (id: string | null) => void;
   onRemoveTicket?: (id: string) => void;
+  onClearAllTickets?: () => void;
   tickets?: any[];
   branchId?: string;
 }
@@ -85,6 +86,7 @@ const ProductTour: React.FC<ProductTourProps> = ({
   onUpdateStatus, 
   onSetCurrentCustomer,
   onRemoveTicket,
+  onClearAllTickets,
   tickets = [],
   branchId = 'vieux-fort-branch'
 }) => {
@@ -123,6 +125,26 @@ const ProductTour: React.FC<ProductTourProps> = ({
   const filteredSteps = React.useMemo(() => {
     const steps: TourStep[] = [];
     let stepIndex = 0;
+
+    // Step 0: Clear Queue (always start fresh)
+    steps.push({
+      target: '[data-tour="customer-join"]',
+      title: 'Starting Fresh',
+      content: 'We are clearing the queue to start the tour with a clean slate.',
+      placement: 'bottom',
+      view: 'customer',
+      action: async (trackAction) => {
+        // Clear all tickets
+        if (onClearAllTickets) {
+          onClearAllTickets();
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
+        // Ensure we're in customer view
+        if (onSetView) onSetView('customer');
+        if (onSetCurrentCustomer) onSetCurrentCustomer(null);
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+    });
 
     // Step 1: Customer Join
     steps.push({
@@ -281,10 +303,10 @@ const ProductTour: React.FC<ProductTourProps> = ({
             const oldCurrentCustomer = currentCustomerId || null;
             // Switch to customer view first
             if (onSetView) onSetView('customer');
-            await new Promise(resolve => setTimeout(resolve, 300));
+            await new Promise(resolve => setTimeout(resolve, 400));
             // Set this customer as the current one to see their view
             onSetCurrentCustomer(customer11.id);
-            await new Promise(resolve => setTimeout(resolve, 300));
+            await new Promise(resolve => setTimeout(resolve, 600));
             // Promote to ELIGIBLE_FOR_ENTRY (this will trigger the notification and countdown)
             onUpdateStatus(customer11.id, TicketStatus.ELIGIBLE_FOR_ENTRY, 'system', 'Tour: Promoted to #10');
             // Track for undo
@@ -297,8 +319,8 @@ const ProductTour: React.FC<ProductTourProps> = ({
                 }
               });
             }
-            // Wait for status update and countdown to appear
-            await new Promise(resolve => setTimeout(resolve, 500));
+            // Wait longer for status update, countdown to appear, and DOM to update
+            await new Promise(resolve => setTimeout(resolve, 1000));
           }
         }
       },
@@ -349,7 +371,68 @@ const ProductTour: React.FC<ProductTourProps> = ({
       view: 'teller'
     });
 
-    // Step 10: Back to Customer Join
+    // Step 10: Manager View - Analytics
+    steps.push({
+      target: '[data-tour="manager-dashboard"]',
+      title: 'Manager Dashboard',
+      content: 'See analytics and data about your queue. View trends and peak times.',
+      placement: 'bottom',
+      view: 'manager',
+      action: async (trackAction) => {
+        if (onSetView) onSetView('manager');
+        await new Promise(resolve => setTimeout(resolve, 400));
+      }
+    });
+
+    // Step 11: Manager Analytics - Graph View
+    steps.push({
+      target: '[data-tour="manager-graph"]',
+      title: 'Analytics Graph',
+      content: 'See peak hours, days, or months. Switch between different views using the dropdown.',
+      placement: 'bottom',
+      view: 'manager',
+      action: async (trackAction) => {
+        // Ensure we're on analytics tab
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+    });
+
+    // Step 12: Manager Analytics - Averages
+    steps.push({
+      target: '[data-tour="manager-averages"]',
+      title: 'Average Metrics',
+      content: 'See average wait time, customers per day, and no-shows per day.',
+      placement: 'top',
+      view: 'manager'
+    });
+
+    // Step 13: Manager Data View
+    steps.push({
+      target: '[data-tour="manager-data-tab"]',
+      title: 'Data View',
+      content: 'Switch to Data tab to see specific day metrics. Pick a date to see that day\'s details.',
+      placement: 'bottom',
+      view: 'manager',
+      action: async (trackAction) => {
+        // Click the Data tab button to switch views
+        const dataTabButton = document.querySelector('[data-tour="manager-data-tab"]') as HTMLButtonElement;
+        if (dataTabButton) {
+          dataTabButton.click();
+          await new Promise(resolve => setTimeout(resolve, 400));
+        }
+      }
+    });
+
+    // Step 14: Manager Data - Date Picker
+    steps.push({
+      target: '[data-tour="manager-date-picker"]',
+      title: 'Select Date',
+      content: 'Pick any date to see total customers, wait time, and no-shows for that day.',
+      placement: 'bottom',
+      view: 'manager'
+    });
+
+    // Step 15: Back to Customer Join
     steps.push({
       target: '[data-tour="customer-join"]',
       title: 'Tour Complete',
@@ -364,7 +447,7 @@ const ProductTour: React.FC<ProductTourProps> = ({
     });
 
     return steps;
-  }, [tickets, branchId, onAddTicket, onUpdateStatus, onSetView, onSetCurrentCustomer, onRemoveTicket]);
+  }, [tickets, branchId, onAddTicket, onUpdateStatus, onSetView, onSetCurrentCustomer, onRemoveTicket, onClearAllTickets, currentCustomerId]);
 
   const startTour = async () => {
     console.log('[Tour] Starting tour');

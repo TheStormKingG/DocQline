@@ -397,8 +397,8 @@ const App: React.FC = () => {
     
     setTickets(prev => {
       const updated = prev.map(t => {
-        if (t.id !== id) return t;
-        return { ...t, ...updates };
+      if (t.id !== id) return t;
+      return { ...t, ...updates };
       });
       
       // Check if capacity opened (if status changed from IN_BUILDING)
@@ -530,6 +530,16 @@ const App: React.FC = () => {
     }
   };
 
+  const clearAllTickets = async () => {
+    // Remove all tickets from Supabase/localStorage
+    const allTicketIds = tickets.map(t => t.id);
+    for (const id of allTicketIds) {
+      await deleteTicketFromSupabase(id);
+    }
+    setTickets([]);
+    setCurrentCustomerId(null);
+  };
+
   const resetAll = () => {
     setTickets([]);
     setCurrentCustomerId(null);
@@ -550,29 +560,30 @@ const App: React.FC = () => {
         onUpdateStatus={updateTicketStatus}
         onSetCurrentCustomer={setCurrentCustomerId}
         onRemoveTicket={removeTicket}
+        onClearAllTickets={clearAllTickets}
         tickets={tickets}
         branchId={selectedBranchId}
       />
       <Layout view={view} setView={setView} resetAll={resetAll} userRole={userRole} branchName={selectedBranch.name}>
         {view === 'customer' && (
-          !currentTicket ? (
+        !currentTicket ? (
             <CustomerJoin branches={BRANCHES.filter(b => !b.isPaused)} onJoin={addTicket} />
-          ) : (
+        ) : (
             <CustomerStatus 
-              ticket={currentTicket} 
+            ticket={currentTicket} 
               allTickets={currentBranchTickets} 
               branch={selectedBranch} 
               onCancel={() => setCurrentCustomerId(null)}
-              onSubmitFeedback={submitFeedback}
+            onSubmitFeedback={submitFeedback}
               onConfirmInBuilding={handleConfirmInBuilding}
-            />
-          )
-        )}
+          />
+        )
+      )}
 
-        {view === 'receptionist' && (
-          <ReceptionDashboard 
-            tickets={tickets} 
-            updateStatus={updateTicketStatus}
+      {view === 'receptionist' && (
+        <ReceptionDashboard 
+          tickets={tickets} 
+          updateStatus={updateTicketStatus} 
             updateTicket={updateTicket}
             branch={selectedBranch}
             inBuildingCount={getInBuildingCount(selectedBranchId)}
@@ -592,20 +603,20 @@ const App: React.FC = () => {
               />
             </div>
             <TellerUI 
-              tickets={tickets} 
-              updateStatus={updateTicketStatus}
+          tickets={tickets} 
+          updateStatus={updateTicketStatus}
               branch={selectedBranch}
               tellerId={tellerId}
               onPauseQueue={pauseQueue}
               onFlagNoShow={flagNoShow}
-            />
+        />
           </div>
         )}
 
         {view === 'manager' && (
           <ManagerDashboard tickets={tickets} branch={selectedBranch} onAddMockData={handleAddMockData} />
-        )}
-      </Layout>
+      )}
+    </Layout>
     </>
   );
 };
