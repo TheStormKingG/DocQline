@@ -147,25 +147,19 @@ const ProductTour: React.FC<ProductTourProps> = ({
       view: 'customer',
       action: async (trackAction) => {
         if (onAddTicket) {
-          const ticketId = `tour-customer-${Date.now()}`;
           onAddTicket('Tour Customer', '+17581234567', CommsChannel.SMS, branchId);
           // Track for undo
-          if (trackAction && onRemoveTicket) {
+          if (trackAction) {
             trackAction({
               type: 'create_ticket',
               data: { name: 'Tour Customer', phone: '+17581234567' },
               undo: async () => {
-                // Find and remove the ticket
-                const ticket = tickets.find(t => t.name === 'Tour Customer' && t.phone === '+17581234567');
-                if (ticket && onRemoveTicket) {
-                  onRemoveTicket(ticket.id);
-                }
-                if (onSetCurrentCustomer) onSetCurrentCustomer(null);
+                // Undo will be handled by the wrapper in goToStep
               }
             });
           }
           // Wait for ticket to be created - useEffect will handle setting current customer
-          await new Promise(resolve => setTimeout(resolve, 800));
+          await new Promise(resolve => setTimeout(resolve, 600));
         }
       },
       waitForAction: true
@@ -213,19 +207,12 @@ const ProductTour: React.FC<ProductTourProps> = ({
             await new Promise(resolve => setTimeout(resolve, 50));
           }
           // Track for undo
-          if (trackAction && onRemoveTicket) {
+          if (trackAction) {
             trackAction({
               type: 'create_multiple_tickets',
               data: { count: 10 },
               undo: async () => {
-                // Remove all Customer 1-10 tickets
-                const customerTickets = tickets.filter(t => 
-                  t.name.startsWith('Customer ') && /^Customer \d+$/.test(t.name)
-                );
-                for (const ticket of customerTickets) {
-                  if (onRemoveTicket) onRemoveTicket(ticket.id);
-                  await new Promise(resolve => setTimeout(resolve, 50));
-                }
+                // Undo will be handled by the wrapper in goToStep
               }
             });
           }
@@ -264,12 +251,7 @@ const ProductTour: React.FC<ProductTourProps> = ({
               type: 'update_statuses',
               data: { changes: statusChanges },
               undo: async () => {
-                for (const change of statusChanges) {
-                  if (onUpdateStatus) {
-                    onUpdateStatus(change.id, change.oldStatus, 'system', 'Tour: Revert status');
-                    await new Promise(resolve => setTimeout(resolve, 50));
-                  }
-                }
+                // Undo will be handled by the wrapper in goToStep
               }
             });
           }
@@ -309,14 +291,7 @@ const ProductTour: React.FC<ProductTourProps> = ({
                 type: 'promote_customer',
                 data: { customerId: customer11.id, oldStatus, oldCurrentCustomer },
                 undo: async () => {
-                  if (onUpdateStatus) {
-                    onUpdateStatus(customer11.id, oldStatus, 'system', 'Tour: Revert promotion');
-                  }
-                  if (onSetCurrentCustomer && oldCurrentCustomer) {
-                    onSetCurrentCustomer(oldCurrentCustomer);
-                  } else if (onSetCurrentCustomer) {
-                    onSetCurrentCustomer(null);
-                  }
+                  // Undo will be handled by the wrapper in goToStep
                 }
               });
             }
@@ -352,9 +327,7 @@ const ProductTour: React.FC<ProductTourProps> = ({
                 type: 'start_service',
                 data: { customerId: firstCustomer.id, oldStatus },
                 undo: async () => {
-                  if (onUpdateStatus) {
-                    onUpdateStatus(firstCustomer.id, oldStatus, 'teller', 'Tour: Revert service start');
-                  }
+                  // Undo will be handled by the wrapper in goToStep
                 }
               });
             }
@@ -455,7 +428,50 @@ const ProductTour: React.FC<ProductTourProps> = ({
         // Track actions for this step
         const stepActions: Array<{ type: string; data: any; undo: () => Promise<void> }> = [];
         const trackAction = (action: { type: string; data: any; undo: () => Promise<void> }) => {
-          stepActions.push(action);
+          // Wrap undo to ensure it has access to latest tickets
+          const wrappedUndo = async () => {
+            // Create a new undo function that will use latest tickets when called
+            const currentTickets = tickets; // Capture current tickets
+            if (action.type === 'create_ticket' && onRemoveTicket) {
+              const ticket = currentTickets.find(t => 
+                t.name === action.data.name && t.phone === action.data.phone
+              );
+              if (ticket) {
+                onRemoveTicket(ticket.id);
+              }
+              if (onSetCurrentCustomer) onSetCurrentCustomer(null);
+            } else if (action.type === 'create_multiple_tickets' && onRemoveTicket) {
+              const customerTickets = currentTickets.filter(t => 
+                t.name.startsWith('Customer ') && /^Customer \d+$/.test(t.name)
+              );
+              for (const ticket of customerTickets) {
+                onRemoveTicket(ticket.id);
+                await new Promise(resolve => setTimeout(resolve, 30));
+              }
+            } else if (action.type === 'update_statuses' && onUpdateStatus) {
+              for (const change of action.data.changes) {
+                onUpdateStatus(change.id, change.oldStatus, 'system', 'Tour: Revert status');
+                await new Promise(resolve => setTimeout(resolve, 30));
+              }
+            } else if (action.type === 'promote_customer') {
+              if (onUpdateStatus) {
+                onUpdateStatus(action.data.customerId, action.data.oldStatus, 'system', 'Tour: Revert promotion');
+              }
+              if (onSetCurrentCustomer) {
+                if (action.data.oldCurrentCustomer) {
+                  onSetCurrentCustomer(action.data.oldCurrentCustomer);
+                } else {
+                  onSetCurrentCustomer(null);
+                }
+              }
+            } else if (action.type === 'start_service' && onUpdateStatus) {
+              onUpdateStatus(action.data.customerId, action.data.oldStatus, 'teller', 'Tour: Revert service start');
+            } else {
+              // Fallback to original undo
+              await action.undo();
+            }
+          };
+          stepActions.push({ ...action, undo: wrappedUndo });
         };
         await step.action(trackAction);
         // Store actions for undo
