@@ -182,9 +182,9 @@ const ProductTour: React.FC<ProductTourProps> = ({
       placement: 'bottom',
       view: 'receptionist',
       action: async () => {
-        // Create 9 more customers to fill the building
+        // Create 10 more customers (to have customer #11 for promotion demo)
         if (onAddTicket) {
-          for (let i = 1; i <= 9; i++) {
+          for (let i = 1; i <= 10; i++) {
             onAddTicket(`Customer ${i}`, `+1758123456${i}`, CommsChannel.SMS, branchId);
             await new Promise(resolve => setTimeout(resolve, 150));
           }
@@ -221,22 +221,30 @@ const ProductTour: React.FC<ProductTourProps> = ({
       waitForAction: true
     });
 
-    // Step 7: Show promotion scenario
+    // Step 7: Show promotion scenario - Customer receives notification
     steps.push({
-      target: '[data-tour="capacity-gate"]',
-      title: 'Customer #11 Gets Message',
-      content: 'When space opens, customer #11 gets a message to enter. They have 10 minutes to confirm.',
+      target: '[data-tour="customer-notification"]',
+      title: 'You Got a Message!',
+      content: 'You are now #10! You have 10 minutes to confirm entry or you will go back in line. See the countdown timer.',
       placement: 'bottom',
-      view: 'receptionist',
+      view: 'customer',
       action: async () => {
         // Find customer #11 and promote them
-        if (onUpdateStatus && tickets.length > 0) {
+        if (onUpdateStatus && onSetCurrentCustomer && tickets.length > 0) {
           const branchTickets = tickets.filter(t => t.branchId === branchId)
             .sort((a, b) => a.queueNumber - b.queueNumber);
           const customer11 = branchTickets.find(t => t.queueNumber === 11);
           if (customer11) {
+            // Switch to customer view first
+            if (onSetView) onSetView('customer');
+            await new Promise(resolve => setTimeout(resolve, 600));
+            // Set this customer as the current one to see their view
+            onSetCurrentCustomer(customer11.id);
+            await new Promise(resolve => setTimeout(resolve, 500));
+            // Promote to ELIGIBLE_FOR_ENTRY (this will trigger the notification and countdown)
             onUpdateStatus(customer11.id, TicketStatus.ELIGIBLE_FOR_ENTRY, 'system', 'Tour: Promoted to #10');
-            await new Promise(resolve => setTimeout(resolve, 800));
+            // Wait for status update and countdown to appear
+            await new Promise(resolve => setTimeout(resolve, 1000));
           }
         }
       },
