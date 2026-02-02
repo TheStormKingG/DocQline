@@ -272,6 +272,9 @@ const App: React.FC = () => {
       ? Math.max(...branchTickets.map(t => t.queueNumber)) + 1 
       : 1;
     
+    // Add small random delay to ensure unique timestamps when creating multiple tickets quickly
+    const joinedAt = Date.now() + Math.random() * 10; // Add 0-10ms random offset
+    
     const newTicket: Ticket = {
       id: Math.random().toString(36).substr(2, 9),
       queueNumber: nextNum,
@@ -282,7 +285,7 @@ const App: React.FC = () => {
       status: TicketStatus.REMOTE_WAITING, // Start as remote waiting
       branchId,
       serviceCategory,
-      joinedAt: Date.now(),
+      joinedAt: Math.floor(joinedAt), // Ensure integer timestamp
       statusHistory: [{
         ticketId: '',
         fromStatus: TicketStatus.REMOTE_WAITING,

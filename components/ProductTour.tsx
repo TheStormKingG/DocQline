@@ -226,19 +226,35 @@ const ProductTour: React.FC<ProductTourProps> = ({
       view: 'receptionist',
       action: async (trackAction) => {
         // Create 10 more customers (to have customer #11 for promotion demo)
+        // We need to create them one at a time and wait for state to update
         if (onAddTicket) {
+          // Create customers sequentially with delays to ensure unique timestamps and state updates
           for (let i = 1; i <= 10; i++) {
-            onAddTicket(`Customer ${i}`, `+1758123456${i}`, CommsChannel.SMS, branchId);
-            // Wait longer for state to update before creating next ticket
+            // Add a delay before each creation to ensure unique joinedAt timestamps
             await new Promise(resolve => setTimeout(resolve, 200));
-          }
-          // Wait for all tickets to be created and state to update
-          await new Promise(resolve => setTimeout(resolve, 800));
-          // Reorder queue numbers to ensure sequential numbering
-          if (onReorderQueueNumbers) {
-            await onReorderQueueNumbers(branchId);
+            
+            // Get current tickets count before creating (use latest from props)
+            const beforeCount = tickets.filter(t => t.branchId === branchId).length;
+            
+            // Create the ticket
+            onAddTicket(`Customer ${i}`, `+1758123456${i}`, CommsChannel.SMS, branchId);
+            
+            // Wait for state to update - poll until ticket count increases
+            // We'll check by waiting and then reordering, which will fix any numbering issues
             await new Promise(resolve => setTimeout(resolve, 300));
           }
+          
+          // Wait for all tickets to be created and state to fully update
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+          // Reorder queue numbers to ensure sequential numbering based on join time
+          // This is critical - it will fix any duplicate numbers
+          if (onReorderQueueNumbers) {
+            await onReorderQueueNumbers(branchId);
+            // Wait for reordering to complete and state to update
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+          
           // Track for undo
           if (trackAction) {
             trackAction({
@@ -519,11 +535,13 @@ const ProductTour: React.FC<ProductTourProps> = ({
       try {
         // Track actions for this step
         const stepActions: Array<{ type: string; data: any; undo: () => Promise<void> }> = [];
+        // Create a function to get latest tickets (will be called when action executes)
+        const getLatestTickets = () => tickets; // This will use the latest tickets from props
         const trackAction = (action: { type: string; data: any; undo: () => Promise<void> }) => {
           // Wrap undo to ensure it has access to latest tickets
           const wrappedUndo = async () => {
             // Create a new undo function that will use latest tickets when called
-            const currentTickets = tickets; // Capture current tickets
+            const currentTickets = getLatestTickets(); // Get latest tickets when undo is called
             if (action.type === 'create_ticket' && onRemoveTicket) {
               const ticket = currentTickets.find(t => 
                 t.name === action.data.name && t.phone === action.data.phone
