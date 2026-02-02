@@ -82,9 +82,9 @@ const App: React.FC = () => {
   const reorderQueueNumbers = async (branchId: string) => {
     const branchTickets = tickets
       .filter(t => t.branchId === branchId)
-      .sort((a, b) => a.queueNumber - b.queueNumber);
+      .sort((a, b) => a.joinedAt - b.joinedAt); // Sort by join time, not queue number
     
-    // Update queue numbers sequentially
+    // Update queue numbers sequentially based on join order
     const updates = branchTickets.map((ticket, index) => ({
       id: ticket.id,
       queueNumber: index + 1
