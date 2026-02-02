@@ -74,6 +74,7 @@ interface ProductTourProps {
   onSetCurrentCustomer?: (id: string | null) => void;
   onRemoveTicket?: (id: string) => void;
   onClearAllTickets?: () => void;
+  onReorderQueueNumbers?: (branchId: string) => Promise<void>;
   tickets?: any[];
   branchId?: string;
 }
@@ -87,6 +88,7 @@ const ProductTour: React.FC<ProductTourProps> = ({
   onSetCurrentCustomer,
   onRemoveTicket,
   onClearAllTickets,
+  onReorderQueueNumbers,
   tickets = [],
   branchId = 'vieux-fort-branch'
 }) => {
@@ -225,10 +227,17 @@ const ProductTour: React.FC<ProductTourProps> = ({
       action: async (trackAction) => {
         // Create 10 more customers (to have customer #11 for promotion demo)
         if (onAddTicket) {
-          const createdTicketIds: string[] = [];
           for (let i = 1; i <= 10; i++) {
             onAddTicket(`Customer ${i}`, `+1758123456${i}`, CommsChannel.SMS, branchId);
-            await new Promise(resolve => setTimeout(resolve, 50));
+            // Wait longer for state to update before creating next ticket
+            await new Promise(resolve => setTimeout(resolve, 200));
+          }
+          // Wait for all tickets to be created and state to update
+          await new Promise(resolve => setTimeout(resolve, 800));
+          // Reorder queue numbers to ensure sequential numbering
+          if (onReorderQueueNumbers) {
+            await onReorderQueueNumbers(branchId);
+            await new Promise(resolve => setTimeout(resolve, 300));
           }
           // Track for undo
           if (trackAction) {
@@ -240,8 +249,6 @@ const ProductTour: React.FC<ProductTourProps> = ({
               }
             });
           }
-          // Wait for all tickets to be created
-          await new Promise(resolve => setTimeout(resolve, 600));
         }
       },
       waitForAction: true
@@ -447,7 +454,7 @@ const ProductTour: React.FC<ProductTourProps> = ({
     });
 
     return steps;
-  }, [tickets, branchId, onAddTicket, onUpdateStatus, onSetView, onSetCurrentCustomer, onRemoveTicket, onClearAllTickets, currentCustomerId]);
+  }, [tickets, branchId, onAddTicket, onUpdateStatus, onSetView, onSetCurrentCustomer, onRemoveTicket, onClearAllTickets, onReorderQueueNumbers, currentCustomerId]);
 
   const startTour = async () => {
     console.log('[Tour] Starting tour');

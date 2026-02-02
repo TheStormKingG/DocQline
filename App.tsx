@@ -561,6 +561,7 @@ const App: React.FC = () => {
         onSetCurrentCustomer={setCurrentCustomerId}
         onRemoveTicket={removeTicket}
         onClearAllTickets={clearAllTickets}
+        onReorderQueueNumbers={reorderQueueNumbers}
         tickets={tickets}
         branchId={selectedBranchId}
       />
