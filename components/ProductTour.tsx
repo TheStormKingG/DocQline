@@ -112,7 +112,8 @@ const ProductTour: React.FC<ProductTourProps> = ({
 
   // Don't filter steps - tour will switch views as needed
   // Create dynamic steps that execute actions
-  const getTourSteps = () => {
+  // Use useMemo to recreate steps when tickets change
+  const filteredSteps = React.useMemo(() => {
     const steps: TourStep[] = [];
     let stepIndex = 0;
 
@@ -290,9 +291,7 @@ const ProductTour: React.FC<ProductTourProps> = ({
     });
 
     return steps;
-  };
-
-  const filteredSteps = getTourSteps();
+  }, [tickets, branchId, onAddTicket, onUpdateStatus, onSetView, onSetCurrentCustomer]);
 
   const startTour = async () => {
     console.log('[Tour] Starting tour');
