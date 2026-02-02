@@ -8,8 +8,9 @@ interface TourStep {
   content: string;
   placement?: 'top' | 'bottom' | 'left' | 'right' | 'center';
   view?: 'customer' | 'receptionist' | 'teller' | 'manager'; // Required view for this step
-  action?: () => Promise<void> | void; // Action to perform before showing this step
+  action?: (trackAction: (action: { type: string; data: any; undo: () => Promise<void> }) => void) => Promise<void> | void; // Action to perform before showing this step
   waitForAction?: boolean; // Whether to wait for action to complete
+  undoAction?: () => Promise<void> | void; // Action to undo this step
 }
 
 const TOUR_STEPS: TourStep[] = [
@@ -91,6 +92,8 @@ const ProductTour: React.FC<ProductTourProps> = ({
   const [tourCustomerId, setTourCustomerId] = useState<string | null>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
+  // Track actions performed in each step for undo
+  const stepActionsRef = useRef<Map<number, { type: string; data: any; undo: () => Promise<void> }[]>>(new Map());
 
   // Check if tour should be shown on first load
   useEffect(() => {
@@ -126,12 +129,12 @@ const ProductTour: React.FC<ProductTourProps> = ({
       content: 'Enter your name and phone number. You will get a ticket number when you join.',
       placement: 'bottom',
       view: 'customer',
-      action: async () => {
+      action: async (trackAction) => {
         // Ensure we're in customer view and no customer is selected
         if (onSetView) onSetView('customer');
         if (onSetCurrentCustomer) onSetCurrentCustomer(null);
         // Wait longer for form to render
-        await new Promise(resolve => setTimeout(resolve, 800));
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
     });
 
@@ -142,11 +145,27 @@ const ProductTour: React.FC<ProductTourProps> = ({
       content: 'We are creating a ticket for you. Watch as you get a ticket number.',
       placement: 'bottom',
       view: 'customer',
-      action: async () => {
+      action: async (trackAction) => {
         if (onAddTicket) {
+          const ticketId = `tour-customer-${Date.now()}`;
           onAddTicket('Tour Customer', '+17581234567', CommsChannel.SMS, branchId);
+          // Track for undo
+          if (trackAction && onRemoveTicket) {
+            trackAction({
+              type: 'create_ticket',
+              data: { name: 'Tour Customer', phone: '+17581234567' },
+              undo: async () => {
+                // Find and remove the ticket
+                const ticket = tickets.find(t => t.name === 'Tour Customer' && t.phone === '+17581234567');
+                if (ticket && onRemoveTicket) {
+                  onRemoveTicket(ticket.id);
+                }
+                if (onSetCurrentCustomer) onSetCurrentCustomer(null);
+              }
+            });
+          }
           // Wait for ticket to be created - useEffect will handle setting current customer
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          await new Promise(resolve => setTimeout(resolve, 800));
         }
       },
       waitForAction: true
@@ -159,9 +178,9 @@ const ProductTour: React.FC<ProductTourProps> = ({
       content: 'See how many people are ahead of you. See how long you will wait.',
       placement: 'bottom',
       view: 'customer',
-      action: async () => {
+      action: async (trackAction) => {
         if (onSetView) onSetView('customer');
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
     });
 
@@ -172,9 +191,9 @@ const ProductTour: React.FC<ProductTourProps> = ({
       content: 'Watch the queue move. See who is inside the building and who is waiting outside.',
       placement: 'bottom',
       view: 'receptionist',
-      action: async () => {
+      action: async (trackAction) => {
         if (onSetView) onSetView('receptionist');
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
     });
 
@@ -185,15 +204,33 @@ const ProductTour: React.FC<ProductTourProps> = ({
       content: 'Only 10 people can be inside. Let us add more customers to show how the queue works.',
       placement: 'bottom',
       view: 'receptionist',
-      action: async () => {
+      action: async (trackAction) => {
         // Create 10 more customers (to have customer #11 for promotion demo)
         if (onAddTicket) {
+          const createdTicketIds: string[] = [];
           for (let i = 1; i <= 10; i++) {
             onAddTicket(`Customer ${i}`, `+1758123456${i}`, CommsChannel.SMS, branchId);
-            await new Promise(resolve => setTimeout(resolve, 150));
+            await new Promise(resolve => setTimeout(resolve, 50));
+          }
+          // Track for undo
+          if (trackAction && onRemoveTicket) {
+            trackAction({
+              type: 'create_multiple_tickets',
+              data: { count: 10 },
+              undo: async () => {
+                // Remove all Customer 1-10 tickets
+                const customerTickets = tickets.filter(t => 
+                  t.name.startsWith('Customer ') && /^Customer \d+$/.test(t.name)
+                );
+                for (const ticket of customerTickets) {
+                  if (onRemoveTicket) onRemoveTicket(ticket.id);
+                  await new Promise(resolve => setTimeout(resolve, 50));
+                }
+              }
+            });
           }
           // Wait for all tickets to be created
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 600));
         }
       },
       waitForAction: true
@@ -206,20 +243,37 @@ const ProductTour: React.FC<ProductTourProps> = ({
       content: 'Watch as customers move into the building. The first 10 customers can enter.',
       placement: 'bottom',
       view: 'receptionist',
-      action: async () => {
+      action: async (trackAction) => {
         // Move first 10 customers to IN_BUILDING
         if (onUpdateStatus && tickets.length > 0) {
           const branchTickets = tickets.filter(t => t.branchId === branchId)
             .sort((a, b) => a.queueNumber - b.queueNumber)
             .slice(0, 10);
           
+          const statusChanges: Array<{ id: string; oldStatus: any }> = [];
           for (const ticket of branchTickets) {
             if (ticket.status === TicketStatus.REMOTE_WAITING || ticket.status === TicketStatus.WAITING) {
+              statusChanges.push({ id: ticket.id, oldStatus: ticket.status });
               onUpdateStatus(ticket.id, TicketStatus.IN_BUILDING, 'system', 'Tour: Customer enters building');
-              await new Promise(resolve => setTimeout(resolve, 150));
+              await new Promise(resolve => setTimeout(resolve, 50));
             }
           }
-          await new Promise(resolve => setTimeout(resolve, 800));
+          // Track for undo
+          if (trackAction) {
+            trackAction({
+              type: 'update_statuses',
+              data: { changes: statusChanges },
+              undo: async () => {
+                for (const change of statusChanges) {
+                  if (onUpdateStatus) {
+                    onUpdateStatus(change.id, change.oldStatus, 'system', 'Tour: Revert status');
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                  }
+                }
+              }
+            });
+          }
+          await new Promise(resolve => setTimeout(resolve, 400));
         }
       },
       waitForAction: true
@@ -232,23 +286,42 @@ const ProductTour: React.FC<ProductTourProps> = ({
       content: 'You are now #10! You have 10 minutes to confirm entry or you will go back in line. See the countdown timer.',
       placement: 'bottom',
       view: 'customer',
-      action: async () => {
+      action: async (trackAction) => {
         // Find customer #11 and promote them
         if (onUpdateStatus && onSetCurrentCustomer && tickets.length > 0) {
           const branchTickets = tickets.filter(t => t.branchId === branchId)
             .sort((a, b) => a.queueNumber - b.queueNumber);
           const customer11 = branchTickets.find(t => t.queueNumber === 11);
           if (customer11) {
+            const oldStatus = customer11.status;
+            const oldCurrentCustomer = tickets.find(t => t.id === currentCustomerId)?.id || null;
             // Switch to customer view first
             if (onSetView) onSetView('customer');
-            await new Promise(resolve => setTimeout(resolve, 600));
+            await new Promise(resolve => setTimeout(resolve, 300));
             // Set this customer as the current one to see their view
             onSetCurrentCustomer(customer11.id);
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, 300));
             // Promote to ELIGIBLE_FOR_ENTRY (this will trigger the notification and countdown)
             onUpdateStatus(customer11.id, TicketStatus.ELIGIBLE_FOR_ENTRY, 'system', 'Tour: Promoted to #10');
+            // Track for undo
+            if (trackAction) {
+              trackAction({
+                type: 'promote_customer',
+                data: { customerId: customer11.id, oldStatus, oldCurrentCustomer },
+                undo: async () => {
+                  if (onUpdateStatus) {
+                    onUpdateStatus(customer11.id, oldStatus, 'system', 'Tour: Revert promotion');
+                  }
+                  if (onSetCurrentCustomer && oldCurrentCustomer) {
+                    onSetCurrentCustomer(oldCurrentCustomer);
+                  } else if (onSetCurrentCustomer) {
+                    onSetCurrentCustomer(null);
+                  }
+                }
+              });
+            }
             // Wait for status update and countdown to appear
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 500));
           }
         }
       },
@@ -262,17 +335,30 @@ const ProductTour: React.FC<ProductTourProps> = ({
       content: 'See the customer you are helping now. See their name and ticket number.',
       placement: 'bottom',
       view: 'teller',
-      action: async () => {
+      action: async (trackAction) => {
         if (onSetView) onSetView('teller');
-        await new Promise(resolve => setTimeout(resolve, 600));
+        await new Promise(resolve => setTimeout(resolve, 300));
         // Move first customer to IN_SERVICE
         if (onUpdateStatus && tickets.length > 0) {
           const branchTickets = tickets.filter(t => t.branchId === branchId)
             .sort((a, b) => a.queueNumber - b.queueNumber);
           const firstCustomer = branchTickets.find(t => t.status === TicketStatus.IN_BUILDING);
           if (firstCustomer) {
+            const oldStatus = firstCustomer.status;
             onUpdateStatus(firstCustomer.id, TicketStatus.IN_SERVICE, 'teller', 'Tour: Teller starts service');
-            await new Promise(resolve => setTimeout(resolve, 800));
+            // Track for undo
+            if (trackAction) {
+              trackAction({
+                type: 'start_service',
+                data: { customerId: firstCustomer.id, oldStatus },
+                undo: async () => {
+                  if (onUpdateStatus) {
+                    onUpdateStatus(firstCustomer.id, oldStatus, 'teller', 'Tour: Revert service start');
+                  }
+                }
+              });
+            }
+            await new Promise(resolve => setTimeout(resolve, 400));
           }
         }
       },
@@ -295,10 +381,10 @@ const ProductTour: React.FC<ProductTourProps> = ({
       content: 'The tour is complete! You can now join the queue yourself or explore other views.',
       placement: 'bottom',
       view: 'customer',
-      action: async () => {
+      action: async (trackAction) => {
         if (onSetView) onSetView('customer');
         if (onSetCurrentCustomer) onSetCurrentCustomer(null);
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
     });
 
@@ -310,18 +396,20 @@ const ProductTour: React.FC<ProductTourProps> = ({
     setShowWelcomeModal(false);
     setIsRunning(true);
     setCurrentStep(0);
+    // Clear any previous step actions
+    stepActionsRef.current.clear();
     // Reset to customer view and clear any current customer
     if (onSetView) onSetView('customer');
     if (onSetCurrentCustomer) onSetCurrentCustomer(null);
     // Scroll to top to ensure elements are visible
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    // Wait longer for view to switch and form to render
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Reduced wait time
+    await new Promise(resolve => setTimeout(resolve, 600));
     // Start first step
-    await goToStep(0);
+    await goToStep(0, false);
   };
 
-  const goToStep = async (stepIndex: number) => {
+  const goToStep = async (stepIndex: number, isBackward: boolean = false) => {
     if (stepIndex < 0 || stepIndex >= filteredSteps.length) {
       finishTour();
       return;
@@ -332,23 +420,51 @@ const ProductTour: React.FC<ProductTourProps> = ({
     console.log(`[Tour] Step ${stepIndex + 1}/${filteredSteps.length}: ${step.title}`, {
       target: step.target,
       view: step.view,
-      currentView
+      currentView,
+      isBackward
     });
 
-    // Switch view first if needed
-    if (step.view && step.view !== currentView && onSetView) {
-      onSetView(step.view);
-      // Wait for view to switch
-      await new Promise(resolve => setTimeout(resolve, 600));
+    // If going backward, undo actions from current step first
+    if (isBackward && stepIndex < currentStep) {
+      const actionsToUndo = stepActionsRef.current.get(currentStep);
+      if (actionsToUndo) {
+        console.log(`[Tour] Undoing ${actionsToUndo.length} actions from step ${currentStep + 1}`);
+        for (const action of actionsToUndo.reverse()) {
+          try {
+            await action.undo();
+          } catch (error) {
+            console.error('[Tour] Undo action failed:', error);
+          }
+        }
+        stepActionsRef.current.delete(currentStep);
+        // Wait for undo to complete
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
     }
 
-    // Execute action if present (after view switch)
-    if (step.action) {
+    // Switch view first if needed (reduced wait time)
+    if (step.view && step.view !== currentView && onSetView) {
+      onSetView(step.view);
+      // Reduced wait time for view switch
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+
+    // Execute action if present (after view switch) - only if going forward
+    if (step.action && !isBackward) {
       try {
-        await step.action();
+        // Track actions for this step
+        const stepActions: Array<{ type: string; data: any; undo: () => Promise<void> }> = [];
+        const trackAction = (action: { type: string; data: any; undo: () => Promise<void> }) => {
+          stepActions.push(action);
+        };
+        await step.action(trackAction);
+        // Store actions for undo
+        if (stepActions.length > 0) {
+          stepActionsRef.current.set(stepIndex, stepActions);
+        }
         if (step.waitForAction) {
-          // Wait longer for state to update
-          await new Promise(resolve => setTimeout(resolve, 800));
+          // Reduced wait time
+          await new Promise(resolve => setTimeout(resolve, 300));
         }
       } catch (error) {
         console.error('[Tour] Action failed:', error);
@@ -357,15 +473,15 @@ const ProductTour: React.FC<ProductTourProps> = ({
 
     setCurrentStep(stepIndex);
     
-    // Wait a bit more for DOM to update
-    await new Promise(resolve => setTimeout(resolve, 400));
+    // Reduced wait time for DOM update
+    await new Promise(resolve => setTimeout(resolve, 100));
     
-    // Find target element - try multiple times with longer waits
+    // Find target element - try multiple times (reduced wait time)
     let targetElement = document.querySelector(step.target);
     let attempts = 0;
-    const maxAttempts = stepIndex === 0 ? 10 : 5; // More attempts for step 1
+    const maxAttempts = stepIndex === 0 ? 8 : 4; // Reduced attempts
     while (!targetElement && attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 150));
       targetElement = document.querySelector(step.target);
       attempts++;
     }
@@ -377,18 +493,22 @@ const ProductTour: React.FC<ProductTourProps> = ({
         // Still show the tooltip even if element not found for step 1
       } else {
         console.warn(`[Tour] Step ${stepIndex + 1}: Element not found after ${attempts} attempts, skipping`, step.target);
-        setTimeout(() => goToStep(stepIndex + 1), 500);
+        setTimeout(() => goToStep(stepIndex + 1, false), 300);
         return;
       }
     }
 
-    // Scroll element into view
-    targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    
-    // Position tooltip
-    setTimeout(() => {
-      positionTooltip(targetElement!, step.placement || 'bottom');
-    }, 300);
+    // Scroll element into view (use requestAnimationFrame for smoother transition)
+    if (targetElement) {
+      requestAnimationFrame(() => {
+        targetElement!.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+      
+      // Position tooltip (reduced delay)
+      setTimeout(() => {
+        positionTooltip(targetElement!, step.placement || 'bottom');
+      }, 100);
+    }
   };
 
   const positionTooltip = (targetElement: Element, placement: string) => {
@@ -455,12 +575,12 @@ const ProductTour: React.FC<ProductTourProps> = ({
 
   const nextStep = async () => {
     console.log('[Tour] Next step clicked');
-    await goToStep(currentStep + 1);
+    await goToStep(currentStep + 1, false);
   };
 
   const prevStep = async () => {
-    console.log('[Tour] Previous step clicked');
-    await goToStep(currentStep - 1);
+    console.log('[Tour] Previous step clicked - undoing actions');
+    await goToStep(currentStep - 1, true);
   };
 
   const skipTour = () => {
