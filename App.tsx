@@ -544,6 +544,7 @@ const App: React.FC = () => {
     <>
       <ProductTour 
         currentView={view}
+        currentCustomerId={currentCustomerId}
         onSetView={setView}
         onAddTicket={addTicket}
         onUpdateStatus={updateTicketStatus}

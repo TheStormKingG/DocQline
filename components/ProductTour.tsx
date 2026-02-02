@@ -67,6 +67,7 @@ const TOUR_STEPS: TourStep[] = [
 
 interface ProductTourProps {
   currentView: 'customer' | 'receptionist' | 'teller' | 'manager';
+  currentCustomerId?: string | null;
   onSetView?: (view: 'customer' | 'receptionist' | 'teller' | 'manager') => void;
   onAddTicket?: (name: string, phone: string, channel: any, branchId: string, memberId?: string, serviceCategory?: any) => void;
   onUpdateStatus?: (id: string, status: any, triggeredBy?: 'system' | 'reception' | 'teller' | 'customer', reason?: string) => void;
@@ -77,7 +78,8 @@ interface ProductTourProps {
 }
 
 const ProductTour: React.FC<ProductTourProps> = ({ 
-  currentView, 
+  currentView,
+  currentCustomerId,
   onSetView, 
   onAddTicket, 
   onUpdateStatus, 
@@ -458,7 +460,8 @@ const ProductTour: React.FC<ProductTourProps> = ({
                 onUpdateStatus(action.data.customerId, action.data.oldStatus, 'system', 'Tour: Revert promotion');
               }
               if (onSetCurrentCustomer) {
-                if (action.data.oldCurrentCustomer) {
+                // Restore previous current customer or clear it
+                if (action.data.oldCurrentCustomer !== undefined && action.data.oldCurrentCustomer !== null) {
                   onSetCurrentCustomer(action.data.oldCurrentCustomer);
                 } else {
                   onSetCurrentCustomer(null);
