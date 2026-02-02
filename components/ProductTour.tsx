@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, ChevronLeft, ChevronRight, HelpCircle } from 'lucide-react';
+import { TicketStatus, CommsChannel } from '../types';
 
 interface TourStep {
   target: string; // CSS selector or data attribute
@@ -7,6 +8,8 @@ interface TourStep {
   content: string;
   placement?: 'top' | 'bottom' | 'left' | 'right' | 'center';
   view?: 'customer' | 'receptionist' | 'teller' | 'manager'; // Required view for this step
+  action?: () => Promise<void> | void; // Action to perform before showing this step
+  waitForAction?: boolean; // Whether to wait for action to complete
 }
 
 const TOUR_STEPS: TourStep[] = [
@@ -63,12 +66,27 @@ const TOUR_STEPS: TourStep[] = [
 
 interface ProductTourProps {
   currentView: 'customer' | 'receptionist' | 'teller' | 'manager';
+  onSetView?: (view: 'customer' | 'receptionist' | 'teller' | 'manager') => void;
+  onAddTicket?: (name: string, phone: string, channel: any, branchId: string, memberId?: string, serviceCategory?: any) => void;
+  onUpdateStatus?: (id: string, status: any, triggeredBy?: 'system' | 'reception' | 'teller' | 'customer', reason?: string) => void;
+  onSetCurrentCustomer?: (id: string | null) => void;
+  tickets?: any[];
+  branchId?: string;
 }
 
-const ProductTour: React.FC<ProductTourProps> = ({ currentView }) => {
+const ProductTour: React.FC<ProductTourProps> = ({ 
+  currentView, 
+  onSetView, 
+  onAddTicket, 
+  onUpdateStatus, 
+  onSetCurrentCustomer,
+  tickets = [],
+  branchId = 'vieux-fort-branch'
+}) => {
   const [isRunning, setIsRunning] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [tourCustomerId, setTourCustomerId] = useState<string | null>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
 
@@ -81,33 +99,223 @@ const ProductTour: React.FC<ProductTourProps> = ({ currentView }) => {
     }
   }, []);
 
-  // Filter steps based on current view
-  const getFilteredSteps = () => {
-    return TOUR_STEPS.filter(step => !step.view || step.view === currentView);
+  // Track when tour customer ticket is created
+  useEffect(() => {
+    if (isRunning && !tourCustomerId && tickets.length > 0 && onSetCurrentCustomer) {
+      const tourTicket = tickets.find(t => t.name === 'Tour Customer' && t.phone === '+17581234567');
+      if (tourTicket) {
+        setTourCustomerId(tourTicket.id);
+        onSetCurrentCustomer(tourTicket.id);
+      }
+    }
+  }, [tickets, isRunning, tourCustomerId, onSetCurrentCustomer]);
+
+  // Don't filter steps - tour will switch views as needed
+  // Create dynamic steps that execute actions
+  const getTourSteps = () => {
+    const steps: TourStep[] = [];
+    let stepIndex = 0;
+
+    // Step 1: Customer Join
+    steps.push({
+      target: '[data-tour="customer-join"]',
+      title: 'Join the Queue',
+      content: 'Enter your name and phone number. You will get a ticket number when you join.',
+      placement: 'bottom',
+      view: 'customer',
+      action: async () => {
+        if (onSetView) onSetView('customer');
+        // Wait a bit for view to switch
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+    });
+
+    // Step 2: Create mock customer
+    steps.push({
+      target: '[data-tour="customer-status"]',
+      title: 'Creating Your Ticket',
+      content: 'We are creating a ticket for you. Watch as you get a ticket number.',
+      placement: 'bottom',
+      view: 'customer',
+      action: async () => {
+        if (onAddTicket) {
+          onAddTicket('Tour Customer', '+17581234567', CommsChannel.SMS, branchId);
+          // Wait for ticket to be created - useEffect will handle setting current customer
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        }
+      },
+      waitForAction: true
+    });
+
+    // Step 3: Customer Status - Position
+    steps.push({
+      target: '[data-tour="customer-eta"]',
+      title: 'Your Position',
+      content: 'See how many people are ahead of you. See how long you will wait.',
+      placement: 'bottom',
+      view: 'customer',
+      action: async () => {
+        if (onSetView) onSetView('customer');
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+    });
+
+    // Step 4: Reception View
+    steps.push({
+      target: '[data-tour="reception-dashboard"]',
+      title: 'Reception View',
+      content: 'Watch the queue move. See who is inside the building and who is waiting outside.',
+      placement: 'bottom',
+      view: 'receptionist',
+      action: async () => {
+        if (onSetView) onSetView('receptionist');
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+    });
+
+    // Step 5: Create more customers to fill building
+    steps.push({
+      target: '[data-tour="capacity-gate"]',
+      title: 'Building Capacity',
+      content: 'Only 10 people can be inside. Let us add more customers to show how the queue works.',
+      placement: 'bottom',
+      view: 'receptionist',
+      action: async () => {
+        // Create 9 more customers to fill the building
+        if (onAddTicket) {
+          for (let i = 1; i <= 9; i++) {
+            onAddTicket(`Customer ${i}`, `+1758123456${i}`, CommsChannel.SMS, branchId);
+            await new Promise(resolve => setTimeout(resolve, 150));
+          }
+          // Wait for all tickets to be created
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      },
+      waitForAction: true
+    });
+
+    // Step 6: Move customers into building
+    steps.push({
+      target: '[data-tour="capacity-gate"]',
+      title: 'Customers Enter Building',
+      content: 'Watch as customers move into the building. The first 10 customers can enter.',
+      placement: 'bottom',
+      view: 'receptionist',
+      action: async () => {
+        // Move first 10 customers to IN_BUILDING
+        if (onUpdateStatus && tickets.length > 0) {
+          const branchTickets = tickets.filter(t => t.branchId === branchId)
+            .sort((a, b) => a.queueNumber - b.queueNumber)
+            .slice(0, 10);
+          
+          for (const ticket of branchTickets) {
+            if (ticket.status === TicketStatus.REMOTE_WAITING || ticket.status === TicketStatus.WAITING) {
+              onUpdateStatus(ticket.id, TicketStatus.IN_BUILDING, 'system', 'Tour: Customer enters building');
+              await new Promise(resolve => setTimeout(resolve, 150));
+            }
+          }
+          await new Promise(resolve => setTimeout(resolve, 800));
+        }
+      },
+      waitForAction: true
+    });
+
+    // Step 7: Show promotion scenario
+    steps.push({
+      target: '[data-tour="capacity-gate"]',
+      title: 'Customer #11 Gets Message',
+      content: 'When space opens, customer #11 gets a message to enter. They have 10 minutes to confirm.',
+      placement: 'bottom',
+      view: 'receptionist',
+      action: async () => {
+        // Find customer #11 and promote them
+        if (onUpdateStatus && tickets.length > 0) {
+          const branchTickets = tickets.filter(t => t.branchId === branchId)
+            .sort((a, b) => a.queueNumber - b.queueNumber);
+          const customer11 = branchTickets.find(t => t.queueNumber === 11);
+          if (customer11) {
+            onUpdateStatus(customer11.id, TicketStatus.ELIGIBLE_FOR_ENTRY, 'system', 'Tour: Promoted to #10');
+            await new Promise(resolve => setTimeout(resolve, 800));
+          }
+        }
+      },
+      waitForAction: true
+    });
+
+    // Step 8: Teller View
+    steps.push({
+      target: '[data-tour="teller-current"]',
+      title: 'Teller View',
+      content: 'See the customer you are helping now. See their name and ticket number.',
+      placement: 'bottom',
+      view: 'teller',
+      action: async () => {
+        if (onSetView) onSetView('teller');
+        await new Promise(resolve => setTimeout(resolve, 600));
+        // Move first customer to IN_SERVICE
+        if (onUpdateStatus && tickets.length > 0) {
+          const branchTickets = tickets.filter(t => t.branchId === branchId)
+            .sort((a, b) => a.queueNumber - b.queueNumber);
+          const firstCustomer = branchTickets.find(t => t.status === TicketStatus.IN_BUILDING);
+          if (firstCustomer) {
+            onUpdateStatus(firstCustomer.id, TicketStatus.IN_SERVICE, 'teller', 'Tour: Teller starts service');
+            await new Promise(resolve => setTimeout(resolve, 800));
+          }
+        }
+      },
+      waitForAction: true
+    });
+
+    // Step 9: Complete Service
+    steps.push({
+      target: '[data-tour="teller-complete"]',
+      title: 'Complete Service',
+      content: 'Click this button when done. It will finish this customer and call the next one.',
+      placement: 'top',
+      view: 'teller'
+    });
+
+    // Step 10: Back to Customer Join
+    steps.push({
+      target: '[data-tour="customer-join"]',
+      title: 'Tour Complete',
+      content: 'The tour is complete! You can now join the queue yourself or explore other views.',
+      placement: 'bottom',
+      view: 'customer',
+      action: async () => {
+        if (onSetView) onSetView('customer');
+        if (onSetCurrentCustomer) onSetCurrentCustomer(null);
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+    });
+
+    return steps;
   };
 
-  const filteredSteps = getFilteredSteps();
+  const filteredSteps = getTourSteps();
 
-  const startTour = () => {
+  const startTour = async () => {
     console.log('[Tour] Starting tour');
     setShowWelcomeModal(false);
     setIsRunning(true);
     setCurrentStep(0);
+    // Reset to customer view
+    if (onSetView) onSetView('customer');
+    if (onSetCurrentCustomer) onSetCurrentCustomer(null);
     // Scroll to top to ensure elements are visible
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    // Small delay to ensure DOM is ready
-    setTimeout(() => {
-      goToStep(0);
-    }, 300);
+    // Wait for view to switch
+    await new Promise(resolve => setTimeout(resolve, 600));
+    // Start first step
+    await goToStep(0);
   };
 
-  const goToStep = (stepIndex: number) => {
+  const goToStep = async (stepIndex: number) => {
     if (stepIndex < 0 || stepIndex >= filteredSteps.length) {
       finishTour();
       return;
     }
 
-    setCurrentStep(stepIndex);
     const step = filteredSteps[stepIndex];
     
     console.log(`[Tour] Step ${stepIndex + 1}/${filteredSteps.length}: ${step.title}`, {
@@ -115,13 +323,44 @@ const ProductTour: React.FC<ProductTourProps> = ({ currentView }) => {
       view: step.view,
       currentView
     });
+
+    // Switch view first if needed
+    if (step.view && step.view !== currentView && onSetView) {
+      onSetView(step.view);
+      // Wait for view to switch
+      await new Promise(resolve => setTimeout(resolve, 600));
+    }
+
+    // Execute action if present (after view switch)
+    if (step.action) {
+      try {
+        await step.action();
+        if (step.waitForAction) {
+          // Wait longer for state to update
+          await new Promise(resolve => setTimeout(resolve, 800));
+        }
+      } catch (error) {
+        console.error('[Tour] Action failed:', error);
+      }
+    }
+
+    setCurrentStep(stepIndex);
     
-    // Find target element
-    const targetElement = document.querySelector(step.target);
+    // Wait a bit more for DOM to update
+    await new Promise(resolve => setTimeout(resolve, 400));
+    
+    // Find target element - try multiple times
+    let targetElement = document.querySelector(step.target);
+    let attempts = 0;
+    while (!targetElement && attempts < 5) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      targetElement = document.querySelector(step.target);
+      attempts++;
+    }
     
     if (!targetElement) {
       // Element not found - skip to next step
-      console.warn(`[Tour] Step ${stepIndex + 1}: Element not found, skipping`, step.target);
+      console.warn(`[Tour] Step ${stepIndex + 1}: Element not found after ${attempts} attempts, skipping`, step.target);
       setTimeout(() => goToStep(stepIndex + 1), 500);
       return;
     }
@@ -131,7 +370,7 @@ const ProductTour: React.FC<ProductTourProps> = ({ currentView }) => {
     
     // Position tooltip
     setTimeout(() => {
-      positionTooltip(targetElement, step.placement || 'bottom');
+      positionTooltip(targetElement!, step.placement || 'bottom');
     }, 300);
   };
 
@@ -197,14 +436,14 @@ const ProductTour: React.FC<ProductTourProps> = ({ currentView }) => {
     tooltip.style.left = `${left}px`;
   };
 
-  const nextStep = () => {
+  const nextStep = async () => {
     console.log('[Tour] Next step clicked');
-    goToStep(currentStep + 1);
+    await goToStep(currentStep + 1);
   };
 
-  const prevStep = () => {
+  const prevStep = async () => {
     console.log('[Tour] Previous step clicked');
-    goToStep(currentStep - 1);
+    await goToStep(currentStep - 1);
   };
 
   const skipTour = () => {

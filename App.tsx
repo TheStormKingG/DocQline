@@ -532,7 +532,15 @@ const App: React.FC = () => {
 
   return (
     <>
-      <ProductTour currentView={view} />
+      <ProductTour 
+        currentView={view}
+        onSetView={setView}
+        onAddTicket={addTicket}
+        onUpdateStatus={updateTicketStatus}
+        onSetCurrentCustomer={setCurrentCustomerId}
+        tickets={tickets}
+        branchId={selectedBranchId}
+      />
       <Layout view={view} setView={setView} resetAll={resetAll} userRole={userRole} branchName={selectedBranch.name}>
         {view === 'customer' && (
           !currentTicket ? (
