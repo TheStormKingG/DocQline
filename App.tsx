@@ -11,7 +11,8 @@ import {
   loadTicketsFromSupabase, 
   saveTicketToSupabase, 
   updateTicketInSupabase, 
-  saveAllTicketsToSupabase 
+  saveAllTicketsToSupabase,
+  deleteTicketFromSupabase
 } from './supabase';
 
 // Laborie Co-operative Credit Union - Vieux Fort Branch
@@ -520,6 +521,15 @@ const App: React.FC = () => {
     };
   };
 
+  const removeTicket = async (id: string) => {
+    await deleteTicketFromSupabase(id);
+    setTickets(prev => prev.filter(t => t.id !== id));
+    // Clear current customer if it was the removed ticket
+    if (currentCustomerId === id) {
+      setCurrentCustomerId(null);
+    }
+  };
+
   const resetAll = () => {
     setTickets([]);
     setCurrentCustomerId(null);
@@ -538,6 +548,7 @@ const App: React.FC = () => {
         onAddTicket={addTicket}
         onUpdateStatus={updateTicketStatus}
         onSetCurrentCustomer={setCurrentCustomerId}
+        onRemoveTicket={removeTicket}
         tickets={tickets}
         branchId={selectedBranchId}
       />

@@ -70,6 +70,7 @@ interface ProductTourProps {
   onAddTicket?: (name: string, phone: string, channel: any, branchId: string, memberId?: string, serviceCategory?: any) => void;
   onUpdateStatus?: (id: string, status: any, triggeredBy?: 'system' | 'reception' | 'teller' | 'customer', reason?: string) => void;
   onSetCurrentCustomer?: (id: string | null) => void;
+  onRemoveTicket?: (id: string) => void;
   tickets?: any[];
   branchId?: string;
 }
@@ -80,6 +81,7 @@ const ProductTour: React.FC<ProductTourProps> = ({
   onAddTicket, 
   onUpdateStatus, 
   onSetCurrentCustomer,
+  onRemoveTicket,
   tickets = [],
   branchId = 'vieux-fort-branch'
 }) => {
@@ -125,9 +127,11 @@ const ProductTour: React.FC<ProductTourProps> = ({
       placement: 'bottom',
       view: 'customer',
       action: async () => {
+        // Ensure we're in customer view and no customer is selected
         if (onSetView) onSetView('customer');
-        // Wait a bit for view to switch
-        await new Promise(resolve => setTimeout(resolve, 300));
+        if (onSetCurrentCustomer) onSetCurrentCustomer(null);
+        // Wait longer for form to render
+        await new Promise(resolve => setTimeout(resolve, 800));
       }
     });
 
@@ -299,20 +303,20 @@ const ProductTour: React.FC<ProductTourProps> = ({
     });
 
     return steps;
-  }, [tickets, branchId, onAddTicket, onUpdateStatus, onSetView, onSetCurrentCustomer]);
+  }, [tickets, branchId, onAddTicket, onUpdateStatus, onSetView, onSetCurrentCustomer, onRemoveTicket]);
 
   const startTour = async () => {
     console.log('[Tour] Starting tour');
     setShowWelcomeModal(false);
     setIsRunning(true);
     setCurrentStep(0);
-    // Reset to customer view
+    // Reset to customer view and clear any current customer
     if (onSetView) onSetView('customer');
     if (onSetCurrentCustomer) onSetCurrentCustomer(null);
     // Scroll to top to ensure elements are visible
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    // Wait for view to switch
-    await new Promise(resolve => setTimeout(resolve, 600));
+    // Wait longer for view to switch and form to render
+    await new Promise(resolve => setTimeout(resolve, 1000));
     // Start first step
     await goToStep(0);
   };
@@ -356,20 +360,26 @@ const ProductTour: React.FC<ProductTourProps> = ({
     // Wait a bit more for DOM to update
     await new Promise(resolve => setTimeout(resolve, 400));
     
-    // Find target element - try multiple times
+    // Find target element - try multiple times with longer waits
     let targetElement = document.querySelector(step.target);
     let attempts = 0;
-    while (!targetElement && attempts < 5) {
-      await new Promise(resolve => setTimeout(resolve, 200));
+    const maxAttempts = stepIndex === 0 ? 10 : 5; // More attempts for step 1
+    while (!targetElement && attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 300));
       targetElement = document.querySelector(step.target);
       attempts++;
     }
     
     if (!targetElement) {
-      // Element not found - skip to next step
-      console.warn(`[Tour] Step ${stepIndex + 1}: Element not found after ${attempts} attempts, skipping`, step.target);
-      setTimeout(() => goToStep(stepIndex + 1), 500);
-      return;
+      // Element not found - for step 1, don't skip, just log warning
+      if (stepIndex === 0) {
+        console.warn(`[Tour] Step 1: Element not found after ${attempts} attempts, but continuing anyway`, step.target);
+        // Still show the tooltip even if element not found for step 1
+      } else {
+        console.warn(`[Tour] Step ${stepIndex + 1}: Element not found after ${attempts} attempts, skipping`, step.target);
+        setTimeout(() => goToStep(stepIndex + 1), 500);
+        return;
+      }
     }
 
     // Scroll element into view
@@ -459,9 +469,26 @@ const ProductTour: React.FC<ProductTourProps> = ({
   };
 
   const finishTour = () => {
-    console.log('[Tour] Tour finished');
+    console.log('[Tour] Tour finished - cleaning up');
     setIsRunning(false);
     setCurrentStep(0);
+    setTourCustomerId(null);
+    
+    // Clean up tour-created tickets
+    if (onRemoveTicket && tickets.length > 0) {
+      const tourTickets = tickets.filter(t => 
+        t.name === 'Tour Customer' || 
+        t.name.startsWith('Customer ') && /^Customer \d+$/.test(t.name)
+      );
+      tourTickets.forEach(ticket => {
+        onRemoveTicket(ticket.id);
+      });
+    }
+    
+    // Reset to clean state - customer view with no current customer
+    if (onSetView) onSetView('customer');
+    if (onSetCurrentCustomer) onSetCurrentCustomer(null);
+    
     if (overlayRef.current) {
       overlayRef.current.style.clipPath = '';
     }
