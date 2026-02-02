@@ -369,7 +369,10 @@ interface DataViewProps {
 }
 
 const DataView: React.FC<DataViewProps> = ({ selectedDate, setSelectedDate, data }) => {
-  const dateInputRef = useRef<HTMLInputElement>(null);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [currentMonth, setCurrentMonth] = useState(selectedDate.getMonth());
+  const [currentYear, setCurrentYear] = useState(selectedDate.getFullYear());
+  const calendarRef = useRef<HTMLDivElement>(null);
 
   const formatDateShort = (date: Date): string => {
     return date.toLocaleDateString('en-US', { 
@@ -379,14 +382,102 @@ const DataView: React.FC<DataViewProps> = ({ selectedDate, setSelectedDate, data
     });
   };
 
-  // Simple date picker
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newDate = new Date(e.target.value);
-    setSelectedDate(newDate);
+  // Close calendar when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) {
+        setShowCalendar(false);
+      }
+    };
+
+    if (showCalendar) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showCalendar]);
+
+  // Calendar functions
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+    'July', 'August', 'September', 'October', 'November', 'December'];
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  const getDaysInMonth = (month: number, year: number) => {
+    return new Date(year, month + 1, 0).getDate();
   };
 
-  const handleButtonClick = () => {
-    dateInputRef.current?.showPicker();
+  const getFirstDayOfMonth = (month: number, year: number) => {
+    return new Date(year, month, 1).getDay();
+  };
+
+  const handleDateSelect = (day: number) => {
+    const newDate = new Date(currentYear, currentMonth, day);
+    setSelectedDate(newDate);
+    setShowCalendar(false);
+  };
+
+  const handlePrevMonth = () => {
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear(currentYear - 1);
+    } else {
+      setCurrentMonth(currentMonth - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear(currentYear + 1);
+    } else {
+      setCurrentMonth(currentMonth + 1);
+    }
+  };
+
+  const handleToday = () => {
+    const today = new Date();
+    setSelectedDate(today);
+    setCurrentMonth(today.getMonth());
+    setCurrentYear(today.getFullYear());
+    setShowCalendar(false);
+  };
+
+  const handleClear = () => {
+    const today = new Date();
+    setSelectedDate(today);
+    setShowCalendar(false);
+  };
+
+  // Generate calendar days
+  const daysInMonth = getDaysInMonth(currentMonth, currentYear);
+  const firstDay = getFirstDayOfMonth(currentMonth, currentYear);
+  const days = [];
+  
+  // Add empty cells for days before the first day of the month
+  for (let i = 0; i < firstDay; i++) {
+    days.push(null);
+  }
+  
+  // Add days of the month
+  for (let day = 1; day <= daysInMonth; day++) {
+    days.push(day);
+  }
+
+  const isSelectedDate = (day: number | null) => {
+    if (day === null) return false;
+    return selectedDate.getDate() === day &&
+           selectedDate.getMonth() === currentMonth &&
+           selectedDate.getFullYear() === currentYear;
+  };
+
+  const isToday = (day: number | null) => {
+    if (day === null) return false;
+    const today = new Date();
+    return today.getDate() === day &&
+           today.getMonth() === currentMonth &&
+           today.getFullYear() === currentYear;
   };
 
   return (
@@ -397,21 +488,85 @@ const DataView: React.FC<DataViewProps> = ({ selectedDate, setSelectedDate, data
           <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
             <Clock size={20} /> Peak Hours (8 AM - 4 PM)
           </h3>
-          <div className="relative">
-            <input
-              ref={dateInputRef}
-              type="date"
-              value={selectedDate.toISOString().split('T')[0]}
-              onChange={handleDateChange}
-              className="hidden"
-            />
+          <div className="relative" ref={calendarRef}>
             <button
-              onClick={handleButtonClick}
+              onClick={() => setShowCalendar(!showCalendar)}
               className="px-4 py-2 border border-slate-300 rounded-lg bg-white text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center gap-2"
             >
               <Calendar size={16} />
               {formatDateShort(selectedDate)}
             </button>
+            {showCalendar && (
+              <div className="absolute right-0 top-full mt-2 bg-white border border-slate-300 rounded-lg shadow-xl z-50 w-80 p-4">
+                {/* Calendar Header */}
+                <div className="flex items-center justify-between mb-4">
+                  <button
+                    onClick={handlePrevMonth}
+                    className="p-1 hover:bg-slate-100 rounded"
+                  >
+                    <span className="text-slate-600">‹</span>
+                  </button>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-slate-800">{monthNames[currentMonth]}</span>
+                    <span className="text-slate-600">{currentYear}</span>
+                  </div>
+                  <button
+                    onClick={handleNextMonth}
+                    className="p-1 hover:bg-slate-100 rounded"
+                  >
+                    <span className="text-slate-600">›</span>
+                  </button>
+                </div>
+
+                {/* Day Names */}
+                <div className="grid grid-cols-7 gap-1 mb-2">
+                  {dayNames.map(day => (
+                    <div key={day} className="text-center text-xs font-bold text-slate-500 py-1">
+                      {day}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Calendar Days */}
+                <div className="grid grid-cols-7 gap-1">
+                  {days.map((day, index) => (
+                    <button
+                      key={index}
+                      onClick={() => day !== null && handleDateSelect(day)}
+                      disabled={day === null}
+                      className={`
+                        py-2 rounded text-sm font-medium transition-all
+                        ${day === null ? 'cursor-default' : 'hover:bg-blue-50 cursor-pointer'}
+                        ${isSelectedDate(day) 
+                          ? 'bg-blue-600 text-white font-bold' 
+                          : isToday(day)
+                          ? 'bg-blue-50 text-blue-600 font-bold'
+                          : 'text-slate-700'
+                        }
+                      `}
+                    >
+                      {day}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Footer Buttons */}
+                <div className="flex justify-between mt-4 pt-4 border-t border-slate-200">
+                  <button
+                    onClick={handleClear}
+                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    Clear
+                  </button>
+                  <button
+                    onClick={handleToday}
+                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    Today
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
         <PeakHoursLineGraph data={data.peakHours} type="hours" />
