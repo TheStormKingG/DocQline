@@ -272,9 +272,16 @@ const App: React.FC = () => {
   ) => {
     // Use the ref (not the closure-captured state) so rapid successive calls
     // each see the tickets added by earlier calls within the same batch.
-    const branchTickets = ticketsRef.current.filter(t => t.branchId === branchId);
-    const nextNum = branchTickets.length > 0
-      ? Math.max(...branchTickets.map(t => t.queueNumber)) + 1
+    // Scope to TODAY only — mock/historical analytics data must not inflate the live queue number.
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayStartMs = todayStart.getTime();
+
+    const todayBranchTickets = ticketsRef.current.filter(
+      t => t.branchId === branchId && t.joinedAt >= todayStartMs,
+    );
+    const nextNum = todayBranchTickets.length > 0
+      ? Math.max(...todayBranchTickets.map(t => t.queueNumber)) + 1
       : 1;
     
     // Add small random delay to ensure unique timestamps when creating multiple tickets quickly
