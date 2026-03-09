@@ -15,19 +15,18 @@ import {
   deleteTicketFromSupabase
 } from './supabase';
 
-// Laborie Co-operative Credit Union - Vieux Fort Branch
-// Based on https://mylaboriecu.com/about/
+// DocQline Medical Centre — Clinic Queue Configuration
 const BRANCHES: BranchConfig[] = [
   {
-    id: 'vieux-fort-branch',
-    name: 'Vieux Fort Branch',
-    address: 'Vieux Fort, Saint Lucia',
-    service: 'Full Service Banking',
-    avgTransactionTime: 7,
+    id: 'main-clinic',
+    name: 'Main Clinic',
+    address: '1 Health Avenue, DocQline Medical Centre',
+    service: 'General Practice & Walk-in Care',
+    avgTransactionTime: 15, // Consultations average 15 minutes
     gracePeriodMinutes: 10,
     isPaused: false,
     maxInBuilding: 10,
-    excludeInServiceFromCapacity: false // Count IN_SERVICE as part of capacity
+    excludeInServiceFromCapacity: false
   }
 ];
 
@@ -35,9 +34,9 @@ const App: React.FC = () => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [currentCustomerId, setCurrentCustomerId] = useState<string | null>(null);
   const [view, setView] = useState<'customer' | 'receptionist' | 'teller' | 'manager'>('customer');
-  const [selectedBranchId] = useState<string>('vieux-fort-branch');
+  const [selectedBranchId] = useState<string>('main-clinic');
   const [userRole, setUserRole] = useState<'customer' | 'receptionist' | 'teller' | 'manager' | undefined>(undefined);
-  const [tellerId, setTellerId] = useState<string>('Teller-1');
+  const [tellerId, setTellerId] = useState<string>('Doctor-1');
 
   const selectedBranch = BRANCHES.find(b => b.id === selectedBranchId) || BRANCHES[0];
 
@@ -211,10 +210,10 @@ const App: React.FC = () => {
           t.id === nextCustomer.id ? { ...t, ...updates } : t
         ));
         
-        // Send notification: "You are now #10 and can enter the building"
+        // Send notification: Patient called to check in at reception
         await sendNotification(
           nextCustomer,
-          `You are now #10 and can enter the building. You have 10 minutes to confirm entry or you will be moved back in the queue.`
+          `You have been called! Please proceed to reception to check in. You have 10 minutes to confirm your arrival or you will be moved back in the queue.`
         );
       }
     }
@@ -421,7 +420,7 @@ const App: React.FC = () => {
     // Check capacity before confirming
     const currentCount = getInBuildingCount(ticket.branchId);
     if (currentCount >= selectedBranch.maxInBuilding) {
-      alert(`⚠️ Building at capacity (${currentCount}/${selectedBranch.maxInBuilding}). Please wait.`);
+      alert(`⚠️ Waiting room is at full capacity (${currentCount}/${selectedBranch.maxInBuilding}). Please wait.`);
       return;
     }
     
@@ -602,7 +601,7 @@ const App: React.FC = () => {
                 type="text"
                 value={tellerId}
                 onChange={(e) => setTellerId(e.target.value)}
-                placeholder="Teller ID"
+                placeholder="Staff / Doctor ID"
                 className="px-4 py-2 border border-slate-200 rounded-lg"
               />
             </div>

@@ -310,7 +310,7 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ tickets, branch, on
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <BarChart3 size={32} className="text-blue-600" />
-          <h2 className="text-3xl font-black text-slate-800">Manager Dashboard</h2>
+          <h2 className="text-3xl font-black text-slate-800">Clinic Analytics</h2>
         </div>
         
         {/* Tabs */}
@@ -578,11 +578,11 @@ const DataView: React.FC<DataViewProps> = ({ selectedDate, setSelectedDate, data
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
           <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <BarChart3 size={20} /> Total Customers
+            <BarChart3 size={20} /> Total Patients
           </h3>
           <div className="space-y-2">
             <p className="text-3xl font-black text-blue-600">{data.totalCustomers}</p>
-            <p className="text-sm text-slate-500">customers</p>
+            <p className="text-sm text-slate-500">patients</p>
           </div>
         </div>
 
@@ -659,11 +659,11 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ analytics, graphView, set
 
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
           <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <BarChart3 size={20} /> Avg Customers Per Day
+            <BarChart3 size={20} /> Avg Patients Per Day
           </h3>
           <div className="space-y-2">
             <p className="text-3xl font-black text-blue-600">{analytics.averages.customersPerDay.toFixed(1)}</p>
-            <p className="text-sm text-slate-500">customers</p>
+            <p className="text-sm text-slate-500">patients</p>
           </div>
         </div>
 
@@ -689,7 +689,7 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ analytics, graphView, set
               {monthNames[analytics.peakMonthOfYear.month - 1]}
             </p>
             <p className="text-sm text-slate-500">{analytics.peakMonthOfYear.year}</p>
-            <p className="text-sm text-slate-500">{analytics.peakMonthOfYear.count} customers</p>
+            <p className="text-sm text-slate-500">{analytics.peakMonthOfYear.count} patients</p>
           </div>
         </div>
 
@@ -700,7 +700,7 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ analytics, graphView, set
           <div className="space-y-2">
             <p className="text-3xl font-black text-blue-600">Q{analytics.peakQuarterOfYear.quarter}</p>
             <p className="text-sm text-slate-500">{analytics.peakQuarterOfYear.year}</p>
-            <p className="text-sm text-slate-500">{analytics.peakQuarterOfYear.count} customers</p>
+            <p className="text-sm text-slate-500">{analytics.peakQuarterOfYear.count} patients</p>
           </div>
         </div>
       </div>
@@ -745,15 +745,15 @@ const PeakHoursLineGraph: React.FC<PeakHoursLineGraphProps> = ({ data, type }) =
   // Get value for tooltip
   const getTooltipValue = (item: { hour?: number; day?: string; month?: number; count: number }): string => {
     if (type === 'hours' && item.hour !== undefined) {
-      return `${formatLabel(item)}: ${item.count} customers`;
+      return `${formatLabel(item)}: ${item.count} patients`;
     }
     if (type === 'days' && item.day !== undefined) {
-      return `${item.day}: ${item.count} customers`;
+      return `${item.day}: ${item.count} patients`;
     }
     if (type === 'months' && item.month !== undefined) {
-      return `${monthNames[item.month - 1]}: ${item.count} customers`;
+      return `${monthNames[item.month - 1]}: ${item.count} patients`;
     }
-    return `${item.count} customers`;
+    return `${item.count} patients`;
   };
 
   // Calculate points for the line
@@ -777,7 +777,7 @@ const PeakHoursLineGraph: React.FC<PeakHoursLineGraphProps> = ({ data, type }) =
           className="text-xs fill-slate-600"
           transform={`rotate(-90 ${padding.left / 2} ${padding.top + graphHeight / 2})`}
         >
-          Number of Customers
+          Number of Patients
         </text>
 
         {/* X-axis label */}

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { User, ClipboardList, CreditCard, RefreshCw, BarChart3 } from 'lucide-react';
+import { User, ClipboardList, Stethoscope, RefreshCw, BarChart3, HeartPulse } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -12,63 +12,50 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children, view, setView, resetAll, userRole, branchName }) => {
-  // Show all views by default (when userRole is undefined)
-  // When userRole is set, filter based on role
-  const showCustomer = !userRole || userRole === 'customer';
-  const showReception = !userRole || userRole === 'receptionist' || userRole === 'manager';
-  const showTeller = !userRole || userRole === 'teller' || userRole === 'manager';
-  const showManager = !userRole || userRole === 'manager';
-  
-  // For now, always show all buttons (remove role filtering)
-  const showAllButtons = true;
-
   return (
     <div className="flex flex-col" style={{ height: '100vh' }}>
       <header className="bg-white border-b sticky top-0 z-50 flex-shrink-0">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img 
-              src="./logo1.png" 
-              alt="Laborie Co-operative Credit Union" 
-              className="h-10 w-10 object-contain bg-transparent"
-              style={{ backgroundColor: 'transparent' }}
-            />
+            <div className="h-10 w-10 rounded-xl bg-blue-600 flex items-center justify-center flex-shrink-0">
+              <HeartPulse size={22} className="text-white" />
+            </div>
             <div className="flex flex-col">
-              <h1 className="text-lg font-bold text-slate-800 leading-tight">Laborie Co-operative</h1>
+              <h1 className="text-lg font-bold text-slate-800 leading-tight">DocQline Medical</h1>
               {branchName && (
                 <p className="text-xs text-slate-500 leading-tight">{branchName}</p>
               )}
             </div>
           </div>
-          
+
           <nav className="flex bg-slate-100 p-1 rounded-lg">
-            <button 
+            <button
               onClick={() => setView('customer')}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${view === 'customer' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-600 hover:text-slate-900'}`}
             >
-              <User size={16} /> Customer
+              <User size={16} /> Patient
             </button>
-            <button 
+            <button
               onClick={() => setView('receptionist')}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${view === 'receptionist' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-600 hover:text-slate-900'}`}
             >
               <ClipboardList size={16} /> Reception
             </button>
-            <button 
+            <button
               onClick={() => setView('teller')}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${view === 'teller' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-600 hover:text-slate-900'}`}
             >
-              <CreditCard size={16} /> Teller
+              <Stethoscope size={16} /> Consultation
             </button>
-            <button 
+            <button
               onClick={() => setView('manager')}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${view === 'manager' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-600 hover:text-slate-900'}`}
             >
-              <BarChart3 size={16} /> Manager
+              <BarChart3 size={16} /> Analytics
             </button>
           </nav>
 
-          <button 
+          <button
             onClick={resetAll}
             className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors rounded-full"
             title="Reset All Data"
@@ -86,10 +73,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, view, setView, resetAl
 
       <footer className="bg-white border-t py-4 flex-shrink-0">
         <p className="text-center text-slate-400 text-sm">
-          &copy; {new Date().getFullYear()} Laborie Co-operative Credit Union Ltd. Est. 1976
+          &copy; {new Date().getFullYear()} DocQline Medical Centre. All rights reserved.
         </p>
         <p className="text-center text-slate-500 text-xs mt-1 font-semibold">
-          We Are Not A Bank, We Are Better!
+          Your Health, Our Priority.
         </p>
         <p className="text-center mt-2">
           <button

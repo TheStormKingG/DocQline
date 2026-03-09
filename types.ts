@@ -1,16 +1,16 @@
 
 export enum TicketStatus {
-  REMOTE_WAITING = 'REMOTE_WAITING', // Waiting remotely (not in building)
-  ELIGIBLE_FOR_ENTRY = 'ELIGIBLE_FOR_ENTRY', // Can enter building now
-  IN_BUILDING = 'IN_BUILDING', // Currently inside the building
-  WAITING = 'WAITING', // Legacy - maps to REMOTE_WAITING
-  CALLED = 'CALLED',    // Triggered countdown (configurable grace period) - maps to ELIGIBLE_FOR_ENTRY
-  ARRIVED = 'ARRIVED',  // Confirmed presence - maps to IN_BUILDING
-  NOT_HERE = 'NOT_HERE', // Grace period after no-show
-  IN_TRANSACTION = 'IN_TRANSACTION', // Previously IN_CONSULT - now IN_SERVICE
-  IN_SERVICE = 'IN_SERVICE', // Currently being served (in transaction)
-  SERVED = 'SERVED', // Transaction completed
-  COMPLETED = 'COMPLETED', // Alias for SERVED
+  REMOTE_WAITING = 'REMOTE_WAITING',          // Patient hasn't arrived yet (pre-arrival queue)
+  ELIGIBLE_FOR_ENTRY = 'ELIGIBLE_FOR_ENTRY',  // Patient called to check in at reception
+  IN_BUILDING = 'IN_BUILDING',                // Patient is in the waiting room
+  WAITING = 'WAITING',                        // Legacy alias for REMOTE_WAITING
+  CALLED = 'CALLED',                          // Legacy alias for ELIGIBLE_FOR_ENTRY
+  ARRIVED = 'ARRIVED',                        // Legacy alias for IN_BUILDING
+  NOT_HERE = 'NOT_HERE',                      // Grace period expired / no-show
+  IN_TRANSACTION = 'IN_TRANSACTION',          // Legacy alias for IN_SERVICE
+  IN_SERVICE = 'IN_SERVICE',                  // Patient is currently with doctor/staff
+  SERVED = 'SERVED',                          // Consultation completed
+  COMPLETED = 'COMPLETED',                    // Alias for SERVED
   REMOVED = 'REMOVED'
 }
 
@@ -20,21 +20,26 @@ export enum CommsChannel {
 }
 
 export enum ServiceCategory {
-  DEPOSIT = 'DEPOSIT',
-  WITHDRAWAL = 'WITHDRAWAL',
-  TRANSFER = 'TRANSFER',
-  LOAN = 'LOAN',
-  ACCOUNT_OPENING = 'ACCOUNT_OPENING',
-  ACCOUNT_INQUIRY = 'ACCOUNT_INQUIRY',
+  GENERAL_CHECKUP = 'GENERAL_CHECKUP',
+  FOLLOW_UP = 'FOLLOW_UP',
+  CONSULTATION = 'CONSULTATION',
+  VACCINATION = 'VACCINATION',
+  EMERGENCY = 'EMERGENCY',
+  LAB_RESULTS = 'LAB_RESULTS',
   OTHER = 'OTHER'
 }
 
 export enum UserRole {
-  CUSTOMER = 'CUSTOMER',
-  MEMBER = 'MEMBER',
-  TELLER = 'TELLER',
-  RECEPTION = 'RECEPTION',
-  MANAGER = 'MANAGER'
+  PATIENT = 'PATIENT',
+  RECEPTIONIST = 'RECEPTIONIST',
+  NURSE = 'NURSE',
+  DOCTOR = 'DOCTOR',
+  MANAGER = 'MANAGER',
+  // Legacy aliases kept for backward compatibility
+  CUSTOMER = 'PATIENT',
+  MEMBER = 'PATIENT',
+  TELLER = 'DOCTOR',
+  RECEPTION = 'RECEPTIONIST'
 }
 
 export interface Branch {
@@ -42,8 +47,8 @@ export interface Branch {
   name: string;
   address: string;
   phone: string;
-  avgTransactionTime: number; // in minutes, learned over time
-  gracePeriodMinutes: number; // configurable grace period
+  avgTransactionTime: number; // avg consultation time in minutes
+  gracePeriodMinutes: number; // grace period for patient check-in confirmation
   isActive: boolean;
 }
 
@@ -52,26 +57,26 @@ export interface Ticket {
   queueNumber: number;
   name: string;
   phone: string;
-  memberId?: string; // Optional member/customer ID
+  memberId?: string;            // Patient / chart ID
   channel: CommsChannel;
   status: TicketStatus;
   branchId: string;
   serviceCategory?: ServiceCategory;
-  counterId?: string; // Which counter/desk is serving
-  tellerId?: string; // Which teller is serving
+  counterId?: string;           // Which consultation room / station
+  tellerId?: string;            // Which doctor / staff member is serving
   joinedAt: number;
   calledAt?: number;
-  eligibleForEntryAt?: number; // When customer became eligible to enter
-  enteredBuildingAt?: number; // When customer entered the building
-  leftBuildingAt?: number; // When customer left the building
-  transactionStartedAt?: number; // Previously consultStartedAt
-  transactionEndedAt?: number; // Previously consultEndedAt
+  eligibleForEntryAt?: number;  // When patient was called to check in
+  enteredBuildingAt?: number;   // When patient entered the waiting room
+  leftBuildingAt?: number;      // When patient left the waiting room
+  transactionStartedAt?: number; // When consultation started
+  transactionEndedAt?: number;   // When consultation ended
   bumpedAt?: number;
   feedbackStars?: number;
-  auditNotes?: string; // Reception can add notes
-  statusHistory?: StatusTransition[]; // Audit log of all status transitions
-  waitTimeMinutes?: number; // Calculated wait time
-  isNoShow?: boolean; // Flagged as no-show
+  auditNotes?: string;          // Reception / triage notes
+  statusHistory?: StatusTransition[];
+  waitTimeMinutes?: number;     // Calculated wait time before consultation
+  isNoShow?: boolean;
 }
 
 export interface BranchConfig {
@@ -79,11 +84,11 @@ export interface BranchConfig {
   name: string;
   address: string;
   service: string;
-  avgTransactionTime: number; // in minutes
-  gracePeriodMinutes: number; // configurable grace period (default 10)
-  isPaused: boolean; // Queue can be paused
-  maxInBuilding: number; // Maximum customers allowed in building (default 9)
-  excludeInServiceFromCapacity: boolean; // Whether to exclude IN_SERVICE from capacity count (default false)
+  avgTransactionTime: number;     // avg consultation duration in minutes
+  gracePeriodMinutes: number;     // minutes patient has to confirm arrival (default 10)
+  isPaused: boolean;
+  maxInBuilding: number;          // max patients allowed in waiting room
+  excludeInServiceFromCapacity: boolean;
 }
 
 export interface StatusTransition {

@@ -90,7 +90,7 @@ const ProductTour: React.FC<ProductTourProps> = ({
   onClearAllTickets,
   onReorderQueueNumbers,
   tickets = [],
-  branchId = 'vieux-fort-branch'
+  branchId = 'main-clinic'
 }) => {
   const [isRunning, setIsRunning] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
@@ -113,7 +113,7 @@ const ProductTour: React.FC<ProductTourProps> = ({
   // Track when tour customer ticket is created
   useEffect(() => {
     if (isRunning && !tourCustomerId && tickets.length > 0 && onSetCurrentCustomer) {
-      const tourTicket = tickets.find(t => t.name === 'Tour Customer' && t.phone === '+17581234567');
+      const tourTicket = tickets.find(t => t.name === 'Demo Patient' && t.phone === '+17581234567');
       if (tourTicket) {
         setTourCustomerId(tourTicket.id);
         onSetCurrentCustomer(tourTicket.id);
@@ -132,7 +132,7 @@ const ProductTour: React.FC<ProductTourProps> = ({
     steps.push({
       target: '[data-tour="customer-join"]',
       title: 'Starting Fresh',
-      content: 'We are clearing the queue to start the tour with a clean slate.',
+      content: 'We are clearing the queue so the tour begins with a clean slate.',
       placement: 'bottom',
       view: 'customer',
       action: async (trackAction) => {
@@ -148,11 +148,11 @@ const ProductTour: React.FC<ProductTourProps> = ({
       }
     });
 
-    // Step 1: Customer Join
+    // Step 1: Patient Check-in
     steps.push({
       target: '[data-tour="customer-join"]',
-      title: 'Join the Queue',
-      content: 'Enter your name and phone number. You will get a ticket number when you join.',
+      title: 'Patient Check-In',
+      content: 'Patients enter their name, phone number, and visit reason to join the queue and receive a token.',
       placement: 'bottom',
       view: 'customer',
       action: async (trackAction) => {
@@ -164,21 +164,21 @@ const ProductTour: React.FC<ProductTourProps> = ({
       }
     });
 
-    // Step 2: Create mock customer
+    // Step 2: Create demo patient token
     steps.push({
       target: '[data-tour="customer-status"]',
-      title: 'Creating Your Ticket',
-      content: 'We are creating a ticket for you. Watch as you get a ticket number.',
+      title: 'Creating Your Token',
+      content: 'A visit token is being created. You will instantly see your queue number and estimated wait time.',
       placement: 'bottom',
       view: 'customer',
       action: async (trackAction) => {
         if (onAddTicket) {
-          onAddTicket('Tour Customer', '+17581234567', CommsChannel.SMS, branchId);
+          onAddTicket('Demo Patient', '+17581234567', CommsChannel.SMS, branchId);
           // Track for undo
           if (trackAction) {
             trackAction({
               type: 'create_ticket',
-              data: { name: 'Tour Customer', phone: '+17581234567' },
+              data: { name: 'Demo Patient', phone: '+17581234567' },
               undo: async () => {
                 // Undo will be handled by the wrapper in goToStep
               }
@@ -191,11 +191,11 @@ const ProductTour: React.FC<ProductTourProps> = ({
       waitForAction: true
     });
 
-    // Step 3: Customer Status - Position
+    // Step 3: Patient status - position and ETA
     steps.push({
       target: '[data-tour="customer-eta"]',
-      title: 'Your Position',
-      content: 'See how many people are ahead of you. See how long you will wait.',
+      title: 'Your Queue Position',
+      content: 'Patients can see how many people are ahead and their estimated wait time in real time.',
       placement: 'bottom',
       view: 'customer',
       action: async (trackAction) => {
@@ -207,8 +207,8 @@ const ProductTour: React.FC<ProductTourProps> = ({
     // Step 4: Reception View
     steps.push({
       target: '[data-tour="reception-dashboard"]',
-      title: 'Reception View',
-      content: 'Watch the queue move. See who is inside the building and who is waiting outside.',
+      title: 'Reception Dashboard',
+      content: 'Reception staff see who is in the waiting room, who is pre-arrival, and who is currently in consultation.',
       placement: 'bottom',
       view: 'receptionist',
       action: async (trackAction) => {
@@ -217,11 +217,11 @@ const ProductTour: React.FC<ProductTourProps> = ({
       }
     });
 
-    // Step 5: Create more customers to fill building
+    // Step 5: Create more patients to fill waiting room
     steps.push({
       target: '[data-tour="capacity-gate"]',
-      title: 'Building Capacity',
-      content: 'Only 10 people can be inside. Let us add more customers to show how the queue works.',
+      title: 'Waiting Room Capacity',
+      content: 'The waiting room holds up to 10 patients. We are adding more patients to demonstrate the queue flow.',
       placement: 'bottom',
       view: 'receptionist',
       action: async (trackAction) => {
@@ -237,7 +237,7 @@ const ProductTour: React.FC<ProductTourProps> = ({
             const beforeCount = tickets.filter(t => t.branchId === branchId).length;
             
             // Create the ticket
-            onAddTicket(`Customer ${i}`, `+1758123456${i}`, CommsChannel.SMS, branchId);
+            onAddTicket(`Patient ${i}`, `+1758123456${i}`, CommsChannel.SMS, branchId);
             
             // Wait for state to update - poll until ticket count increases
             // We'll check by waiting and then reordering, which will fix any numbering issues
@@ -270,11 +270,11 @@ const ProductTour: React.FC<ProductTourProps> = ({
       waitForAction: true
     });
 
-    // Step 6: Move customers into building
+    // Step 6: Move patients into waiting room
     steps.push({
       target: '[data-tour="capacity-gate"]',
-      title: 'Customers Enter Building',
-      content: 'Watch as customers move into the building. The first 10 customers can enter.',
+      title: 'Patients Check In',
+      content: 'The first 10 patients are checked into the waiting room. The grid fills up as patients arrive.',
       placement: 'bottom',
       view: 'receptionist',
       action: async (trackAction) => {
@@ -288,7 +288,7 @@ const ProductTour: React.FC<ProductTourProps> = ({
           for (const ticket of branchTickets) {
             if (ticket.status === TicketStatus.REMOTE_WAITING || ticket.status === TicketStatus.WAITING) {
               statusChanges.push({ id: ticket.id, oldStatus: ticket.status });
-              onUpdateStatus(ticket.id, TicketStatus.IN_BUILDING, 'system', 'Tour: Customer enters building');
+              onUpdateStatus(ticket.id, TicketStatus.IN_BUILDING, 'system', 'Tour: Patient checks into waiting room');
               await new Promise(resolve => setTimeout(resolve, 50));
             }
           }
@@ -308,11 +308,11 @@ const ProductTour: React.FC<ProductTourProps> = ({
       waitForAction: true
     });
 
-    // Step 7: Show promotion scenario - Customer receives notification
+    // Step 7: Patient receives call-to-check-in notification
     steps.push({
       target: '[data-tour="customer-notification"]',
-      title: 'You Got a Message!',
-      content: 'You are now #10! You have 10 minutes to confirm entry or you will go back in line. See the countdown timer.',
+      title: 'Patient Notified!',
+      content: 'You have been called to check in at reception! You have 10 minutes to confirm your arrival before being moved back in the queue.',
       placement: 'bottom',
       view: 'customer',
       action: async (trackAction) => {
@@ -331,7 +331,7 @@ const ProductTour: React.FC<ProductTourProps> = ({
             onSetCurrentCustomer(customer11.id);
             await new Promise(resolve => setTimeout(resolve, 600));
             // Promote to ELIGIBLE_FOR_ENTRY (this will trigger the notification and countdown)
-            onUpdateStatus(customer11.id, TicketStatus.ELIGIBLE_FOR_ENTRY, 'system', 'Tour: Promoted to #10');
+            onUpdateStatus(customer11.id, TicketStatus.ELIGIBLE_FOR_ENTRY, 'system', 'Tour: Called to check in');
             // Track for undo
             if (trackAction) {
               trackAction({
@@ -350,11 +350,11 @@ const ProductTour: React.FC<ProductTourProps> = ({
       waitForAction: true
     });
 
-    // Step 8: Teller View
+    // Step 8: Consultation View (Doctor/Staff)
     steps.push({
       target: '[data-tour="teller-current"]',
-      title: 'Teller View',
-      content: 'See the customer you are helping now. See their name and ticket number.',
+      title: 'Consultation View',
+      content: 'Doctors and staff see the current patient, their visit reason, and a live consultation timer.',
       placement: 'bottom',
       view: 'teller',
       action: async (trackAction) => {
@@ -367,7 +367,7 @@ const ProductTour: React.FC<ProductTourProps> = ({
           const firstCustomer = branchTickets.find(t => t.status === TicketStatus.IN_BUILDING);
           if (firstCustomer) {
             const oldStatus = firstCustomer.status;
-            onUpdateStatus(firstCustomer.id, TicketStatus.IN_SERVICE, 'teller', 'Tour: Teller starts service');
+            onUpdateStatus(firstCustomer.id, TicketStatus.IN_SERVICE, 'teller', 'Tour: Doctor starts consultation');
             // Track for undo
             if (trackAction) {
               trackAction({
@@ -385,20 +385,20 @@ const ProductTour: React.FC<ProductTourProps> = ({
       waitForAction: true
     });
 
-    // Step 9: Complete Service
+    // Step 9: Complete Consultation
     steps.push({
       target: '[data-tour="teller-complete"]',
-      title: 'Complete Service',
-      content: 'Click this button when done. It will finish this customer and call the next one.',
+      title: 'Complete Consultation',
+      content: 'When the consultation is done, click this button. It marks the patient as complete and calls the next patient automatically.',
       placement: 'top',
       view: 'teller'
     });
 
-    // Step 10: Manager View - Analytics
+    // Step 10: Clinic Analytics
     steps.push({
       target: '[data-tour="manager-dashboard"]',
-      title: 'Manager Dashboard',
-      content: 'See analytics and data about your queue. View trends and peak times.',
+      title: 'Clinic Analytics',
+      content: 'Managers and admins can monitor queue performance, patient volume, and peak periods for the clinic.',
       placement: 'bottom',
       view: 'manager',
       action: async (trackAction) => {
@@ -407,11 +407,11 @@ const ProductTour: React.FC<ProductTourProps> = ({
       }
     });
 
-    // Step 11: Manager Analytics - Graph View
+    // Step 11: Peak activity graph
     steps.push({
       target: '[data-tour="manager-graph"]',
-      title: 'Analytics Graph',
-      content: 'See peak hours, days, or months. Switch between different views using the dropdown.',
+      title: 'Peak Activity Graph',
+      content: 'Visualise when the clinic is busiest — by hour, day of week, or month. Use the dropdown to switch views.',
       placement: 'bottom',
       view: 'manager',
       action: async (trackAction) => {
@@ -420,20 +420,20 @@ const ProductTour: React.FC<ProductTourProps> = ({
       }
     });
 
-    // Step 12: Manager Analytics - Averages
+    // Step 12: Average metrics
     steps.push({
       target: '[data-tour="manager-averages"]',
       title: 'Average Metrics',
-      content: 'See average wait time, customers per day, and no-shows per day.',
+      content: 'Track average patient wait time, patients seen per day, and daily no-show rate at a glance.',
       placement: 'top',
       view: 'manager'
     });
 
-    // Step 13: Manager Data View
+    // Step 13: Data View tab
     steps.push({
       target: '[data-tour="manager-data-tab"]',
-      title: 'Data View',
-      content: 'Switch to Data tab to see specific day metrics. Pick a date to see that day\'s details.',
+      title: 'Daily Data View',
+      content: 'Switch to the Data tab to drill down into any specific day — total patients, wait times, and no-shows.',
       placement: 'bottom',
       view: 'manager',
       action: async (trackAction) => {
@@ -446,20 +446,20 @@ const ProductTour: React.FC<ProductTourProps> = ({
       }
     });
 
-    // Step 14: Manager Data - Date Picker
+    // Step 14: Date picker
     steps.push({
       target: '[data-tour="manager-date-picker"]',
-      title: 'Select Date',
-      content: 'Pick any date to see total customers, wait time, and no-shows for that day.',
+      title: 'Select a Date',
+      content: 'Click to open the calendar and pick any date to review that day\'s patient activity and clinic metrics.',
       placement: 'bottom',
       view: 'manager'
     });
 
-    // Step 15: Back to Customer Join
+    // Step 15: Tour complete — back to Patient Check-In
     steps.push({
       target: '[data-tour="customer-join"]',
       title: 'Tour Complete',
-      content: 'The tour is complete! You can now join the queue yourself or explore other views.',
+      content: 'That\'s the full clinic queue workflow! You can now check in as a patient, or explore any view using the navigation above.',
       placement: 'bottom',
       view: 'customer',
       action: async (trackAction) => {
@@ -543,7 +543,7 @@ const ProductTour: React.FC<ProductTourProps> = ({
             // Create a new undo function that will use latest tickets when called
             const currentTickets = getLatestTickets(); // Get latest tickets when undo is called
             if (action.type === 'create_ticket' && onRemoveTicket) {
-              const ticket = currentTickets.find(t => 
+              const ticket = currentTickets.find(t =>
                 t.name === action.data.name && t.phone === action.data.phone
               );
               if (ticket) {
@@ -551,8 +551,8 @@ const ProductTour: React.FC<ProductTourProps> = ({
               }
               if (onSetCurrentCustomer) onSetCurrentCustomer(null);
             } else if (action.type === 'create_multiple_tickets' && onRemoveTicket) {
-              const customerTickets = currentTickets.filter(t => 
-                t.name.startsWith('Customer ') && /^Customer \d+$/.test(t.name)
+              const customerTickets = currentTickets.filter(t =>
+                t.name.startsWith('Patient ') && /^Patient \d+$/.test(t.name)
               );
               for (const ticket of customerTickets) {
                 onRemoveTicket(ticket.id);
@@ -723,9 +723,9 @@ const ProductTour: React.FC<ProductTourProps> = ({
     
     // Clean up tour-created tickets
     if (onRemoveTicket && tickets.length > 0) {
-      const tourTickets = tickets.filter(t => 
-        t.name === 'Tour Customer' || 
-        t.name.startsWith('Customer ') && /^Customer \d+$/.test(t.name)
+      const tourTickets = tickets.filter(t =>
+        t.name === 'Demo Patient' ||
+        (t.name.startsWith('Patient ') && /^Patient \d+$/.test(t.name))
       );
       tourTickets.forEach(ticket => {
         onRemoveTicket(ticket.id);
@@ -809,8 +809,8 @@ const ProductTour: React.FC<ProductTourProps> = ({
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
             <div className="text-center mb-6">
               <HelpCircle size={48} className="mx-auto text-blue-600 mb-4" />
-              <h2 className="text-2xl font-bold text-slate-800 mb-2">Welcome!</h2>
-              <p className="text-slate-600 text-lg">Would you like a quick tour?</p>
+              <h2 className="text-2xl font-bold text-slate-800 mb-2">Welcome to DocQline!</h2>
+              <p className="text-slate-600 text-lg">Would you like a quick tour of the clinic queue system?</p>
             </div>
             <div className="space-y-3">
               <button
