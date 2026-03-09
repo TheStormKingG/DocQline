@@ -251,14 +251,7 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ tickets, branch, on
     } as PeakAnalytics;
   }, [tickets, branch.id]);
 
-  if (!analytics) {
-    return null; // Will auto-generate mock data via useEffect
-  }
-
-  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
-    'July', 'August', 'September', 'October', 'November', 'December'];
-
-  // Calculate data for selected date
+  // Must be declared before any early return to satisfy Rules of Hooks
   const selectedDateData = useMemo(() => {
     const branchTickets = tickets.filter(t => t.branchId === branch.id);
     const startOfDay = new Date(selectedDate);
@@ -271,7 +264,6 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ tickets, branch, on
       return ticketDate >= startOfDay && ticketDate <= endOfDay;
     });
 
-    // Peak hours for the day (8am-4pm)
     const hourCounts: { [hour: number]: number } = {};
     let totalWaitTime = 0;
     let noShows = 0;
@@ -291,10 +283,7 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ tickets, branch, on
 
     const peakHours = [];
     for (let hour = 8; hour <= 16; hour++) {
-      peakHours.push({
-        hour,
-        count: hourCounts[hour] || 0
-      });
+      peakHours.push({ hour, count: hourCounts[hour] || 0 });
     }
 
     return {
@@ -304,6 +293,13 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ tickets, branch, on
       totalNoShows: noShows
     };
   }, [tickets, branch.id, selectedDate]);
+
+  if (!analytics) {
+    return null; // useEffect above will auto-generate mock data and trigger re-render
+  }
+
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'];
 
   return (
     <div className="space-y-6" data-tour="manager-dashboard">
