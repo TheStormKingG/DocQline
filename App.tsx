@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Ticket, TicketStatus, CommsChannel, BranchConfig, ServiceCategory, Metrics, StatusTransition } from './types';
 import CustomerJoin from './components/CustomerJoin';
 import CustomerStatus from './components/CustomerStatus';
@@ -32,6 +32,11 @@ const BRANCHES: BranchConfig[] = [
 
 const App: React.FC = () => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  // Ref that always mirrors the latest tickets state — used in addTicket to avoid
+  // stale-closure bugs when the function is called rapidly (e.g. from the tour).
+  const ticketsRef = useRef<Ticket[]>([]);
+  useEffect(() => { ticketsRef.current = tickets; }, [tickets]);
+
   const [currentCustomerId, setCurrentCustomerId] = useState<string | null>(null);
   const [view, setView] = useState<'customer' | 'receptionist' | 'teller' | 'manager'>('customer');
   const [selectedBranchId] = useState<string>('main-clinic');
@@ -265,10 +270,11 @@ const App: React.FC = () => {
     memberId?: string,
     serviceCategory?: ServiceCategory
   ) => {
-    // Get next queue number for this branch
-    const branchTickets = tickets.filter(t => t.branchId === branchId);
-    const nextNum = branchTickets.length > 0 
-      ? Math.max(...branchTickets.map(t => t.queueNumber)) + 1 
+    // Use the ref (not the closure-captured state) so rapid successive calls
+    // each see the tickets added by earlier calls within the same batch.
+    const branchTickets = ticketsRef.current.filter(t => t.branchId === branchId);
+    const nextNum = branchTickets.length > 0
+      ? Math.max(...branchTickets.map(t => t.queueNumber)) + 1
       : 1;
     
     // Add small random delay to ensure unique timestamps when creating multiple tickets quickly
@@ -299,7 +305,9 @@ const App: React.FC = () => {
     
     // Save to Supabase (with localStorage fallback)
     await saveTicketToSupabase(newTicket);
-    
+
+    // Update the ref immediately so the next rapid addTicket call sees this ticket
+    ticketsRef.current = [...ticketsRef.current, newTicket];
     setTickets(prev => [...prev, newTicket]);
     setCurrentCustomerId(newTicket.id);
   };

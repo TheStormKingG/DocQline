@@ -65,8 +65,11 @@ export const Layout: React.FC<LayoutProps> = ({ children, view, setView, resetAl
         </div>
       </header>
 
-      <main className="flex-1 max-w-6xl mx-auto w-full p-2 md:p-4 overflow-hidden flex flex-col" style={{ minHeight: 0, height: 'calc(100vh - 64px - 80px)' }}>
-        <div className="flex-1 overflow-hidden min-h-0">
+      <main
+        className={`flex-1 max-w-6xl mx-auto w-full p-2 md:p-4 flex flex-col ${view === 'receptionist' ? 'overflow-hidden' : 'overflow-y-auto'}`}
+        style={{ minHeight: 0, height: 'calc(100vh - 64px - 80px)' }}
+      >
+        <div className={`flex-1 min-h-0 ${view === 'receptionist' ? 'overflow-hidden' : ''}`}>
           {children}
         </div>
       </main>
