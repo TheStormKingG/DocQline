@@ -99,7 +99,7 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
                     <>
                       <span className="text-lg font-black text-green-700">{patientInSpot.queueNumber}</span>
                       <span className="text-[10px] uppercase font-bold tracking-tighter text-green-600 mt-1 leading-none">
-                        {patientInSpot.name.split(' ')[0].substring(0, 6)}
+                        {patientInSpot.name.split(' ')[0].substring(0, 8)}
                       </span>
                     </>
                   ) : (
@@ -192,7 +192,7 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
                 >
                   <span className="text-[10px] font-black">{ticket.queueNumber}</span>
                   <span className="text-[6px] uppercase font-bold tracking-tighter opacity-70 mt-0.5 leading-none">
-                    {ticket.name.split(' ')[0].substring(0, 4)}
+                    {ticket.name.split(' ')[0].substring(0, 7)}
                   </span>
                 </div>
               );
