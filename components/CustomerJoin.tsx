@@ -1,150 +1,227 @@
 import React, { useState } from 'react';
 import { BranchConfig, CommsChannel, ServiceCategory } from '../types';
-import { MessageCircle, Send, CheckCircle2, HeartPulse, Stethoscope } from 'lucide-react';
+import { MessageCircle, Send, HeartPulse } from 'lucide-react';
 
 interface CustomerJoinProps {
   branches: BranchConfig[];
-  onJoin: (name: string, phone: string, channel: CommsChannel, branchId: string, patientId?: string, visitReason?: ServiceCategory) => void;
+  onJoin: (
+    name: string,
+    phone: string,
+    channel: CommsChannel,
+    branchId: string,
+    patientId?: string,
+    visitReason?: ServiceCategory,
+  ) => void;
 }
 
-const VISIT_REASON_LABELS: Record<ServiceCategory, string> = {
-  [ServiceCategory.GENERAL_CHECKUP]: 'General Check-up',
-  [ServiceCategory.FOLLOW_UP]: 'Follow-up Visit',
-  [ServiceCategory.CONSULTATION]: 'Consultation',
-  [ServiceCategory.VACCINATION]: 'Vaccination',
-  [ServiceCategory.EMERGENCY]: 'Emergency / Urgent',
-  [ServiceCategory.LAB_RESULTS]: 'Lab Results',
-  [ServiceCategory.OTHER]: 'Other',
-};
+const VISIT_REASONS: { value: ServiceCategory; label: string }[] = [
+  { value: ServiceCategory.GENERAL_CHECKUP, label: 'General Check-up' },
+  { value: ServiceCategory.FOLLOW_UP,       label: 'Follow-up Visit' },
+  { value: ServiceCategory.CONSULTATION,    label: 'Consultation' },
+  { value: ServiceCategory.VACCINATION,     label: 'Vaccination' },
+  { value: ServiceCategory.EMERGENCY,       label: 'Emergency / Urgent' },
+  { value: ServiceCategory.LAB_RESULTS,     label: 'Lab Results' },
+  { value: ServiceCategory.OTHER,           label: 'Other' },
+];
 
 const CustomerJoin: React.FC<CustomerJoinProps> = ({ branches, onJoin }) => {
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [consent, setConsent] = useState(false);
+  const [name,                setName]                = useState('');
+  const [phone,               setPhone]               = useState('');
+  const [consent,             setConsent]             = useState(false);
+  const [visitReason,         setVisitReason]         = useState<ServiceCategory | ''>('');
+  const [channel,             setChannel]             = useState<CommsChannel>(CommsChannel.SMS);
   const [isSimulatingFailure, setIsSimulatingFailure] = useState(false);
-  const [visitReason, setVisitReason] = useState<ServiceCategory | ''>('');
 
-  // Use first active (non-paused) branch as default
-  const selectedBranchId = branches.find(b => !b.isPaused)?.id || branches[0]?.id || '';
-  const isValid = name.trim().length > 2 && /^\+?[1-9]\d{1,14}$/.test(phone) && consent && selectedBranchId;
+  const selectedBranchId =
+    branches.find(b => !b.isPaused)?.id ?? branches[0]?.id ?? '';
 
-  const handleJoin = (channel: CommsChannel) => {
-    const reason = visitReason || undefined;
+  const isValid =
+    name.trim().length > 2 &&
+    /^\+?[1-9]\d{1,14}$/.test(phone) &&
+    consent &&
+    !!selectedBranchId;
+
+  const handleJoin = () => {
+    const reason = (visitReason || undefined) as ServiceCategory | undefined;
     if (channel === CommsChannel.WHATSAPP && isSimulatingFailure) {
-      alert('WhatsApp delivery failed. Switching to SMS fallback...');
-      onJoin(name, phone, CommsChannel.SMS, selectedBranchId, undefined, reason as ServiceCategory | undefined);
+      alert('WhatsApp delivery failed. Switching to SMS fallback…');
+      onJoin(name, phone, CommsChannel.SMS, selectedBranchId, undefined, reason);
     } else {
-      onJoin(name, phone, channel, selectedBranchId, undefined, reason as ServiceCategory | undefined);
+      onJoin(name, phone, channel, selectedBranchId, undefined, reason);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100" data-tour="customer-join">
-      {/* Hero Banner */}
-      <div className="relative p-8 text-white overflow-hidden" style={{ minHeight: '220px' }}>
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-700 via-blue-600 to-teal-600" />
-        {/* Subtle medical pattern overlay */}
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M16 10h8v6h6v8h-6v6h-8v-6h-6v-8h6z' fill='%23ffffff' fill-opacity='1'/%3E%3C/svg%3E")`,
-          backgroundSize: '40px 40px'
-        }} />
-        <div className="relative z-10 flex flex-col items-center text-center">
-          <div className="h-16 w-16 rounded-2xl bg-white/20 flex items-center justify-center mb-4 backdrop-blur-sm border border-white/30">
-            <HeartPulse size={32} className="text-white" />
-          </div>
-          <h2 className="text-2xl font-bold leading-tight drop-shadow-lg">DocQline Medical Centre</h2>
-          <p className="text-blue-100 text-sm mt-1 drop-shadow-md">Patient Queue System</p>
-          <div className="mt-4 flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs border border-white/30 shadow-lg">
-            <CheckCircle2 size={13} className="text-emerald-300" />
-            <span>Walk-ins Welcome · Open Today</span>
-          </div>
+    <div className="max-w-[420px] mx-auto pt-4 pb-8" data-tour="customer-join">
+
+      {/* ── Wordmark header ──────────────────────────────── */}
+      <div className="text-center mb-7">
+        <div
+          className="inline-flex items-center justify-center h-[52px] w-[52px] rounded-2xl mb-4"
+          style={{ background: 'linear-gradient(145deg, #0071E3 0%, #34AADC 100%)' }}
+        >
+          <HeartPulse size={26} className="text-white" strokeWidth={2} />
         </div>
+        <h1 className="text-[22px] font-semibold text-[#1D1D1F] tracking-tight">DocQline Medical</h1>
+        <p className="text-[14px] text-[#8E8E93] mt-1">Walk-ins welcome · Open today</p>
       </div>
 
-      <div className="p-8 space-y-5">
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">Full Name</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Alex Johnson"
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-          />
-        </div>
+      {/* ── Form card ────────────────────────────────────── */}
+      <div
+        className="bg-white rounded-2xl overflow-hidden"
+        style={{ boxShadow: '0 2px 20px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.05)' }}
+      >
+        <div className="p-6 space-y-5">
 
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">Phone Number</label>
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="+1 758 456 7890"
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-          />
-        </div>
+          {/* Full Name */}
+          <div>
+            <label className="block text-[13px] font-medium text-[#3C3C43] mb-1.5">
+              Full Name
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="e.g. Alex Johnson"
+              className="w-full px-3.5 py-[11px] text-[15px] rounded-xl bg-[#F5F5F7] border border-transparent text-[#1D1D1F] placeholder:text-[#AEAEB2] outline-none focus:bg-white focus:border-[#0071E3]/60 focus:ring-2 focus:ring-[#0071E3]/12 transition-all"
+            />
+          </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">
-            Reason for Visit <span className="text-slate-400 font-normal">(optional)</span>
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            {(Object.values(ServiceCategory) as ServiceCategory[]).map(reason => (
+          {/* Phone Number */}
+          <div>
+            <label className="block text-[13px] font-medium text-[#3C3C43] mb-1.5">
+              Phone Number
+            </label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={e => setPhone(e.target.value)}
+              placeholder="+1 758 456 7890"
+              className="w-full px-3.5 py-[11px] text-[15px] rounded-xl bg-[#F5F5F7] border border-transparent text-[#1D1D1F] placeholder:text-[#AEAEB2] outline-none focus:bg-white focus:border-[#0071E3]/60 focus:ring-2 focus:ring-[#0071E3]/12 transition-all"
+            />
+          </div>
+
+          {/* Visit Reason */}
+          <div>
+            <label className="block text-[13px] font-medium text-[#3C3C43] mb-1.5">
+              Reason for Visit{' '}
+              <span className="text-[#AEAEB2] font-normal">— optional</span>
+            </label>
+            <div className="grid grid-cols-2 gap-1.5">
+              {VISIT_REASONS.map(({ value, label }) => {
+                const active = visitReason === value;
+                return (
+                  <button
+                    key={value}
+                    onClick={() => setVisitReason(active ? '' : value)}
+                    className={`px-3 py-2 rounded-[10px] text-[13px] font-medium text-left transition-all ${
+                      active
+                        ? 'text-[#0071E3] bg-[#EBF5FF]'
+                        : 'text-[#3C3C43] bg-[#F5F5F7] hover:bg-[#EBEBF0]'
+                    }`}
+                    style={active ? { border: '1px solid rgba(0,113,227,0.30)' } : { border: '1px solid transparent' }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Notification Channel */}
+          <div>
+            <label className="block text-[13px] font-medium text-[#3C3C43] mb-1.5">
+              Notify me via
+            </label>
+            <div className="grid grid-cols-2 gap-2">
               <button
-                key={reason}
-                onClick={() => setVisitReason(visitReason === reason ? '' : reason)}
-                className={`px-3 py-2 rounded-xl text-xs font-semibold border-2 transition-all text-left flex items-center gap-1.5 ${
-                  visitReason === reason
-                    ? 'bg-blue-50 border-blue-500 text-blue-700'
-                    : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+                onClick={() => setChannel(CommsChannel.SMS)}
+                className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] font-medium border transition-all ${
+                  channel === CommsChannel.SMS
+                    ? 'bg-[#0071E3] border-[#0071E3] text-white shadow-[0_2px_6px_rgba(0,113,227,0.30)]'
+                    : 'bg-[#F5F5F7] border-transparent text-[#6E6E73] hover:bg-[#EBEBF0]'
                 }`}
               >
-                <Stethoscope size={11} className="flex-shrink-0" />
-                {VISIT_REASON_LABELS[reason]}
+                <Send size={14} strokeWidth={2} /> SMS
               </button>
-            ))}
+              <button
+                onClick={() => setChannel(CommsChannel.WHATSAPP)}
+                className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] font-medium border transition-all ${
+                  channel === CommsChannel.WHATSAPP
+                    ? 'bg-[#25D366] border-[#25D366] text-white shadow-[0_2px_6px_rgba(37,211,102,0.30)]'
+                    : 'bg-[#F5F5F7] border-transparent text-[#6E6E73] hover:bg-[#EBEBF0]'
+                }`}
+              >
+                <MessageCircle size={14} strokeWidth={2} /> WhatsApp
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-start gap-3">
-          <input
-            type="checkbox"
-            id="consent"
-            checked={consent}
-            onChange={(e) => setConsent(e.target.checked)}
-            className="mt-1 h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-          />
-          <label htmlFor="consent" className="text-sm text-slate-600 leading-tight">
-            I agree to receive queue updates by SMS or WhatsApp for today's visit.
+          {/* Consent */}
+          <label className="flex items-start gap-3 cursor-pointer select-none">
+            <div
+              className={`mt-[2px] h-5 w-5 flex-shrink-0 rounded-[6px] flex items-center justify-center transition-all ${
+                consent
+                  ? 'bg-[#0071E3]'
+                  : 'bg-[#F5F5F7] border border-[#C7C7CC]'
+              }`}
+              onClick={() => setConsent(!consent)}
+            >
+              {consent && (
+                <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                  <path
+                    d="M1 4L3.5 6.5L9 1"
+                    stroke="white"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </div>
+            <input
+              type="checkbox"
+              checked={consent}
+              onChange={e => setConsent(e.target.checked)}
+              className="sr-only"
+            />
+            <span className="text-[13px] text-[#6E6E73] leading-snug">
+              I agree to receive queue updates for today's visit.
+            </span>
           </label>
+
+          {/* Primary CTA */}
+          <button
+            disabled={!isValid}
+            onClick={handleJoin}
+            className={`w-full py-[13px] rounded-xl text-[15px] font-semibold transition-all active:scale-[0.98] ${
+              isValid
+                ? 'bg-[#0071E3] hover:bg-[#0077ED] text-white shadow-[0_2px_10px_rgba(0,113,227,0.32)]'
+                : 'bg-[#E5E5EA] text-[#AEAEB2] cursor-not-allowed'
+            }`}
+          >
+            Join Queue
+          </button>
+
         </div>
 
-        {isValid && (
-          <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <button
-              onClick={() => handleJoin(CommsChannel.SMS)}
-              className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-slate-100 hover:border-blue-600 hover:bg-blue-50 transition-all group"
-            >
-              <Send className="text-slate-400 group-hover:text-blue-600" size={24} />
-              <span className="text-sm font-bold text-slate-700">Join via SMS</span>
-            </button>
-            <button
-              onClick={() => handleJoin(CommsChannel.WHATSAPP)}
-              className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-slate-100 hover:border-green-600 hover:bg-green-50 transition-all group"
-            >
-              <MessageCircle className="text-slate-400 group-hover:text-green-600" size={24} />
-              <span className="text-sm font-bold text-slate-700">Join via WhatsApp</span>
-            </button>
-          </div>
-        )}
-
-        <div className="pt-4 border-t flex items-center justify-between">
-          <span className="text-xs text-slate-400">Simulate WhatsApp Fail?</span>
+        {/* Debug footer (delivery simulation) */}
+        <div
+          className="px-6 py-3 flex items-center justify-between"
+          style={{ background: '#F5F5F7', borderTop: '1px solid rgba(0,0,0,0.05)' }}
+        >
+          <span className="text-[11px] text-[#AEAEB2]">Simulate delivery failure</span>
           <button
             onClick={() => setIsSimulatingFailure(!isSimulatingFailure)}
-            className={`w-10 h-5 rounded-full transition-colors relative ${isSimulatingFailure ? 'bg-red-500' : 'bg-slate-200'}`}
+            className={`relative w-10 h-[22px] rounded-full transition-colors ${
+              isSimulatingFailure ? 'bg-[#FF3B30]' : 'bg-[#D1D1D6]'
+            }`}
           >
-            <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-all ${isSimulatingFailure ? 'translate-x-5' : ''}`} />
+            <div
+              className={`absolute top-[3px] h-4 w-4 bg-white rounded-full shadow-sm transition-all ${
+                isSimulatingFailure ? 'left-5' : 'left-[3px]'
+              }`}
+            />
           </button>
         </div>
       </div>

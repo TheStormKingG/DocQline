@@ -302,33 +302,41 @@ const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ tickets, branch, on
     'July', 'August', 'September', 'October', 'November', 'December'];
 
   return (
-    <div className="space-y-6" data-tour="manager-dashboard">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <BarChart3 size={32} className="text-blue-600" />
-          <h2 className="text-3xl font-black text-slate-800">Clinic Analytics</h2>
+    <div className="space-y-5" data-tour="manager-dashboard">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2.5">
+          <div className="h-9 w-9 rounded-xl flex items-center justify-center"
+            style={{ background: 'linear-gradient(145deg, #0071E3, #34AADC)' }}>
+            <BarChart3 size={18} className="text-white" />
+          </div>
+          <h2 className="text-[20px] font-semibold text-[#1D1D1F] tracking-tight">Clinic Analytics</h2>
         </div>
-        
-        {/* Tabs */}
-        <div className="flex bg-slate-100 p-1 rounded-lg">
+
+        {/* Segmented tabs */}
+        <div className="flex items-center gap-[2px] p-[3px] rounded-[11px]"
+          style={{ background: 'rgba(0,0,0,0.05)' }}>
           <button
             onClick={() => setActiveTab('data')}
-            className={`px-4 py-2 rounded-md font-medium transition-all ${
-              activeTab === 'data'
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-slate-600 hover:text-slate-800'
+            className={`px-4 py-1.5 rounded-[8px] text-[13px] font-medium transition-all duration-200 ${
+              activeTab === 'data' ? 'text-[#0071E3]' : 'text-[#6E6E73] hover:text-[#1D1D1F]'
             }`}
+            style={activeTab === 'data' ? {
+              background: '#FFFFFF',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.10), 0 0 0 0.5px rgba(0,0,0,0.06)',
+            } : undefined}
             data-tour="manager-data-tab"
           >
             Data
           </button>
           <button
             onClick={() => setActiveTab('analytics')}
-            className={`px-4 py-2 rounded-md font-medium transition-all ${
-              activeTab === 'analytics'
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-slate-600 hover:text-slate-800'
+            className={`px-4 py-1.5 rounded-[8px] text-[13px] font-medium transition-all duration-200 ${
+              activeTab === 'analytics' ? 'text-[#0071E3]' : 'text-[#6E6E73] hover:text-[#1D1D1F]'
             }`}
+            style={activeTab === 'analytics' ? {
+              background: '#FFFFFF',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.10), 0 0 0 0.5px rgba(0,0,0,0.06)',
+            } : undefined}
           >
             Analytics
           </button>
@@ -480,51 +488,46 @@ const DataView: React.FC<DataViewProps> = ({ selectedDate, setSelectedDate, data
   return (
     <>
       {/* Peak Hours Line Graph */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-            <Clock size={20} /> Peak Hours (8 AM - 4 PM)
+      <div className="bg-white rounded-2xl p-6" style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-[15px] font-semibold text-[#1D1D1F] flex items-center gap-2">
+            <Clock size={16} className="text-[#0071E3]" /> Peak Hours (8 AM – 4 PM)
           </h3>
           <div className="relative" ref={calendarRef}>
             <button
               onClick={() => setShowCalendar(!showCalendar)}
-              className="px-4 py-2 border border-slate-300 rounded-lg bg-white text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center gap-2"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-[13px] font-medium text-[#3C3C43] bg-[#F5F5F7] hover:bg-[#EBEBF0] transition-all"
               data-tour="manager-date-picker"
             >
-              <Calendar size={16} />
+              <Calendar size={14} className="text-[#0071E3]" />
               {formatDateShort(selectedDate)}
             </button>
             {showCalendar && (
-              <div className="absolute right-0 top-full mt-2 bg-white border border-slate-300 rounded-lg shadow-xl z-50 w-80 p-4">
+              <div className="absolute right-0 top-full mt-2 bg-white rounded-2xl z-50 w-80 p-4"
+                style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.14), 0 0 0 0.5px rgba(0,0,0,0.05)' }}>
                 {/* Calendar Header */}
-                <div className="flex items-center justify-between mb-4">
-                  <button
-                    onClick={handlePrevMonth}
-                    className="p-1 hover:bg-slate-100 rounded"
-                  >
-                    <span className="text-slate-600">‹</span>
+                <div className="flex items-center justify-between mb-3">
+                  <button onClick={handlePrevMonth}
+                    className="p-1.5 rounded-lg hover:bg-[#F5F5F7] text-[#6E6E73] text-lg leading-none transition-all">
+                    ‹
                   </button>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-slate-800">{monthNames[currentMonth]}</span>
-                    <span className="text-slate-600">{currentYear}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[14px] font-semibold text-[#1D1D1F]">{monthNames[currentMonth]}</span>
+                    <span className="text-[14px] text-[#8E8E93]">{currentYear}</span>
                   </div>
-                  <button
-                    onClick={handleNextMonth}
-                    className="p-1 hover:bg-slate-100 rounded"
-                  >
-                    <span className="text-slate-600">›</span>
+                  <button onClick={handleNextMonth}
+                    className="p-1.5 rounded-lg hover:bg-[#F5F5F7] text-[#6E6E73] text-lg leading-none transition-all">
+                    ›
                   </button>
                 </div>
-
                 {/* Day Names */}
-                <div className="grid grid-cols-7 gap-1 mb-2">
+                <div className="grid grid-cols-7 gap-1 mb-1.5">
                   {dayNames.map(day => (
-                    <div key={day} className="text-center text-xs font-bold text-slate-500 py-1">
+                    <div key={day} className="text-center text-[11px] font-semibold text-[#AEAEB2] py-1">
                       {day}
                     </div>
                   ))}
                 </div>
-
                 {/* Calendar Days */}
                 <div className="grid grid-cols-7 gap-1">
                   {days.map((day, index) => (
@@ -532,34 +535,27 @@ const DataView: React.FC<DataViewProps> = ({ selectedDate, setSelectedDate, data
                       key={index}
                       onClick={() => day !== null && handleDateSelect(day)}
                       disabled={day === null}
-                      className={`
-                        py-2 rounded text-sm font-medium transition-all
-                        ${day === null ? 'cursor-default' : 'hover:bg-blue-50 cursor-pointer'}
-                        ${isSelectedDate(day) 
-                          ? 'bg-blue-600 text-white font-bold' 
+                      className={`py-1.5 rounded-lg text-[13px] font-medium transition-all ${
+                        day === null ? 'cursor-default' : 'cursor-pointer'
+                      } ${isSelectedDate(day)
+                          ? 'bg-[#0071E3] text-white'
                           : isToday(day)
-                          ? 'bg-blue-50 text-blue-600 font-bold'
-                          : 'text-slate-700'
-                        }
-                      `}
+                          ? 'bg-[#EBF5FF] text-[#0071E3] font-semibold'
+                          : day !== null ? 'text-[#1D1D1F] hover:bg-[#F5F5F7]' : ''
+                      }`}
                     >
                       {day}
                     </button>
                   ))}
                 </div>
-
-                {/* Footer Buttons */}
-                <div className="flex justify-between mt-4 pt-4 border-t border-slate-200">
-                  <button
-                    onClick={handleClear}
-                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                  >
+                {/* Footer */}
+                <div className="flex justify-between mt-3 pt-3" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+                  <button onClick={handleClear}
+                    className="text-[13px] text-[#0071E3] hover:text-[#0077ED] font-medium">
                     Clear
                   </button>
-                  <button
-                    onClick={handleToday}
-                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                  >
+                  <button onClick={handleToday}
+                    className="text-[13px] text-[#0071E3] hover:text-[#0077ED] font-medium">
                     Today
                   </button>
                 </div>
@@ -572,34 +568,22 @@ const DataView: React.FC<DataViewProps> = ({ selectedDate, setSelectedDate, data
 
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <BarChart3 size={20} /> Total Patients
-          </h3>
-          <div className="space-y-2">
-            <p className="text-3xl font-black text-blue-600">{data.totalCustomers}</p>
-            <p className="text-sm text-slate-500">patients</p>
-          </div>
+        <div className="bg-white rounded-2xl p-5" style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+          <p className="text-[11px] font-semibold text-[#AEAEB2] uppercase tracking-wider mb-3">Total Patients</p>
+          <p className="text-[32px] font-bold text-[#0071E3] tabular-nums leading-none">{data.totalCustomers}</p>
+          <p className="text-[13px] text-[#8E8E93] mt-1">patients</p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <Clock size={20} /> Cumulative Wait Time
-          </h3>
-          <div className="space-y-2">
-            <p className="text-3xl font-black text-blue-600">{data.cumulativeWaitTime}</p>
-            <p className="text-sm text-slate-500">minutes</p>
-          </div>
+        <div className="bg-white rounded-2xl p-5" style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+          <p className="text-[11px] font-semibold text-[#AEAEB2] uppercase tracking-wider mb-3">Cumulative Wait</p>
+          <p className="text-[32px] font-bold text-[#0071E3] tabular-nums leading-none">{data.cumulativeWaitTime}</p>
+          <p className="text-[13px] text-[#8E8E93] mt-1">minutes</p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <BarChart3 size={20} /> Total No-Shows
-          </h3>
-          <div className="space-y-2">
-            <p className="text-3xl font-black text-blue-600">{data.totalNoShows}</p>
-            <p className="text-sm text-slate-500">no-shows</p>
-          </div>
+        <div className="bg-white rounded-2xl p-5" style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+          <p className="text-[11px] font-semibold text-[#AEAEB2] uppercase tracking-wider mb-3">Total No-Shows</p>
+          <p className="text-[32px] font-bold text-[#0071E3] tabular-nums leading-none">{data.totalNoShows}</p>
+          <p className="text-[13px] text-[#8E8E93] mt-1">no-shows</p>
         </div>
       </div>
     </>
@@ -618,22 +602,22 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ analytics, graphView, set
   return (
     <>
       {/* Peak Hours/Days/Months Line Graph */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6" data-tour="manager-graph">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-            <Clock size={20} />
-            {graphView === 'hours' && 'Peak Hours (8 AM - 4 PM)'}
-            {graphView === 'days' && 'Peak Day (Mon to Fri)'}
-            {graphView === 'months' && 'Peak Month (Jan to Dec)'}
+      <div className="bg-white rounded-2xl p-6" style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }} data-tour="manager-graph">
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-[15px] font-semibold text-[#1D1D1F] flex items-center gap-2">
+            <TrendingUp size={16} className="text-[#0071E3]" />
+            {graphView === 'hours' && 'Peak Hours (8 AM – 4 PM)'}
+            {graphView === 'days' && 'Peak Day (Mon – Fri)'}
+            {graphView === 'months' && 'Peak Month (Jan – Dec)'}
           </h3>
           <select
             value={graphView}
             onChange={(e) => setGraphView(e.target.value as 'hours' | 'days' | 'months')}
-            className="px-4 py-2 border border-slate-300 rounded-lg bg-white text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="px-3.5 py-2 rounded-xl text-[13px] font-medium text-[#3C3C43] bg-[#F5F5F7] outline-none cursor-pointer hover:bg-[#EBEBF0] transition-all border-0"
           >
-            <option value="hours">Peak Hours (8 AM - 4 PM)</option>
-            <option value="days">Peak Day (Mon to Fri)</option>
-            <option value="months">Peak Month (Jan to Dec)</option>
+            <option value="hours">Peak Hours (8 AM – 4 PM)</option>
+            <option value="days">Peak Day (Mon – Fri)</option>
+            <option value="months">Peak Month (Jan – Dec)</option>
           </select>
         </div>
         {graphView === 'hours' && <PeakHoursLineGraph data={analytics.peakHoursData} type="hours" />}
@@ -643,61 +627,49 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ analytics, graphView, set
 
       {/* Averages */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4" data-tour="manager-averages">
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <BarChart3 size={20} /> Avg Wait Time
-          </h3>
-          <div className="space-y-2">
-            <p className="text-3xl font-black text-blue-600">{analytics.averages.waitTime.toFixed(1)}</p>
-            <p className="text-sm text-slate-500">minutes</p>
-          </div>
+        <div className="bg-white rounded-2xl p-5" style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+          <p className="text-[11px] font-semibold text-[#AEAEB2] uppercase tracking-wider mb-3">Avg Wait Time</p>
+          <p className="text-[32px] font-bold text-[#0071E3] tabular-nums leading-none">
+            {analytics.averages.waitTime.toFixed(1)}
+          </p>
+          <p className="text-[13px] text-[#8E8E93] mt-1">minutes</p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <BarChart3 size={20} /> Avg Patients Per Day
-          </h3>
-          <div className="space-y-2">
-            <p className="text-3xl font-black text-blue-600">{analytics.averages.customersPerDay.toFixed(1)}</p>
-            <p className="text-sm text-slate-500">patients</p>
-          </div>
+        <div className="bg-white rounded-2xl p-5" style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+          <p className="text-[11px] font-semibold text-[#AEAEB2] uppercase tracking-wider mb-3">Avg Patients / Day</p>
+          <p className="text-[32px] font-bold text-[#0071E3] tabular-nums leading-none">
+            {analytics.averages.customersPerDay.toFixed(1)}
+          </p>
+          <p className="text-[13px] text-[#8E8E93] mt-1">patients</p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <BarChart3 size={20} /> Avg # No-Shows Per Day
-          </h3>
-          <div className="space-y-2">
-            <p className="text-3xl font-black text-blue-600">{analytics.averages.noShowsPerDay.toFixed(1)}</p>
-            <p className="text-sm text-slate-500">no-shows</p>
-          </div>
+        <div className="bg-white rounded-2xl p-5" style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+          <p className="text-[11px] font-semibold text-[#AEAEB2] uppercase tracking-wider mb-3">Avg No-Shows / Day</p>
+          <p className="text-[32px] font-bold text-[#0071E3] tabular-nums leading-none">
+            {analytics.averages.noShowsPerDay.toFixed(1)}
+          </p>
+          <p className="text-[13px] text-[#8E8E93] mt-1">no-shows</p>
         </div>
       </div>
 
       {/* Peak Periods */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <Calendar size={20} /> Peak Month of Year
-          </h3>
-          <div className="space-y-2">
-            <p className="text-3xl font-black text-blue-600">
-              {monthNames[analytics.peakMonthOfYear.month - 1]}
-            </p>
-            <p className="text-sm text-slate-500">{analytics.peakMonthOfYear.year}</p>
-            <p className="text-sm text-slate-500">{analytics.peakMonthOfYear.count} patients</p>
-          </div>
+        <div className="bg-white rounded-2xl p-5" style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+          <p className="text-[11px] font-semibold text-[#AEAEB2] uppercase tracking-wider mb-3">Peak Month of Year</p>
+          <p className="text-[24px] font-semibold text-[#1D1D1F] leading-tight">
+            {monthNames[analytics.peakMonthOfYear.month - 1]}
+          </p>
+          <p className="text-[13px] text-[#8E8E93] mt-1">{analytics.peakMonthOfYear.year}</p>
+          <p className="text-[12px] text-[#AEAEB2]">{analytics.peakMonthOfYear.count} patients</p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <Calendar size={20} /> Peak Quarter of Year
-          </h3>
-          <div className="space-y-2">
-            <p className="text-3xl font-black text-blue-600">Q{analytics.peakQuarterOfYear.quarter}</p>
-            <p className="text-sm text-slate-500">{analytics.peakQuarterOfYear.year}</p>
-            <p className="text-sm text-slate-500">{analytics.peakQuarterOfYear.count} patients</p>
-          </div>
+        <div className="bg-white rounded-2xl p-5" style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+          <p className="text-[11px] font-semibold text-[#AEAEB2] uppercase tracking-wider mb-3">Peak Quarter of Year</p>
+          <p className="text-[24px] font-semibold text-[#1D1D1F] leading-tight">
+            Q{analytics.peakQuarterOfYear.quarter}
+          </p>
+          <p className="text-[13px] text-[#8E8E93] mt-1">{analytics.peakQuarterOfYear.year}</p>
+          <p className="text-[12px] text-[#AEAEB2]">{analytics.peakQuarterOfYear.count} patients</p>
         </div>
       </div>
     </>
@@ -797,7 +769,7 @@ const PeakHoursLineGraph: React.FC<PeakHoursLineGraphProps> = ({ data, type }) =
                 y1={y}
                 x2={width - padding.right}
                 y2={y}
-                stroke="#e2e8f0"
+                stroke="rgba(0,0,0,0.06)"
                 strokeWidth="1"
               />
               <text

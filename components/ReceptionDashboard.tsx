@@ -1,37 +1,44 @@
 import React, { useState } from 'react';
 import { Ticket, TicketStatus, BranchConfig } from '../types';
-import { UserCheck, FileText } from 'lucide-react';
+import { UserCheck, FileText, Stethoscope } from 'lucide-react';
 
 interface ReceptionDashboardProps {
   tickets: Ticket[];
-  updateStatus: (id: string, status: TicketStatus, triggeredBy?: 'system' | 'reception' | 'teller' | 'customer', reason?: string) => void;
+  updateStatus: (
+    id: string,
+    status: TicketStatus,
+    triggeredBy?: 'system' | 'reception' | 'teller' | 'customer',
+    reason?: string,
+  ) => void;
   updateTicket: (id: string, updates: Partial<Ticket>) => void;
   branch: BranchConfig;
   inBuildingCount: number;
   maxInBuilding: number;
 }
 
-const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, updateStatus, updateTicket, branch, inBuildingCount, maxInBuilding }) => {
+const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({
+  tickets, updateStatus, updateTicket, branch, inBuildingCount, maxInBuilding,
+}) => {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
-  const [auditNote, setAuditNote] = useState('');
+  const [auditNote, setAuditNote]           = useState('');
 
   const branchTickets = tickets.filter(t => t.branchId === branch.id);
 
-  const remoteWaiting = branchTickets.filter(t =>
-    t.status === TicketStatus.REMOTE_WAITING || t.status === TicketStatus.WAITING
-  ).sort((a, b) => a.queueNumber - b.queueNumber);
+  const remoteWaiting = branchTickets
+    .filter(t => t.status === TicketStatus.REMOTE_WAITING || t.status === TicketStatus.WAITING)
+    .sort((a, b) => a.queueNumber - b.queueNumber);
 
-  const inBuilding = branchTickets.filter(t =>
-    t.status === TicketStatus.IN_BUILDING || t.status === TicketStatus.ARRIVED
-  ).sort((a, b) => a.queueNumber - b.queueNumber);
+  const inBuilding = branchTickets
+    .filter(t => t.status === TicketStatus.IN_BUILDING || t.status === TicketStatus.ARRIVED)
+    .sort((a, b) => a.queueNumber - b.queueNumber);
 
-  const inService = branchTickets.filter(t =>
-    t.status === TicketStatus.IN_SERVICE || t.status === TicketStatus.IN_TRANSACTION
+  const inService = branchTickets.filter(
+    t => t.status === TicketStatus.IN_SERVICE || t.status === TicketStatus.IN_TRANSACTION,
   );
 
   const handleMarkEntered = async (ticketId: string) => {
     if (inBuildingCount >= maxInBuilding) {
-      alert(`⚠️ Waiting room at capacity (${inBuildingCount}/${maxInBuilding}). Cannot check patient in.`);
+      alert(`Waiting room at capacity (${inBuildingCount}/${maxInBuilding}). Cannot check patient in.`);
       return;
     }
     await updateStatus(ticketId, TicketStatus.IN_BUILDING, 'reception', 'Checked in by reception');
@@ -43,70 +50,96 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
 
   const handleAddAuditNote = () => {
     if (selectedTicket && auditNote.trim()) {
-      const existingNotes = selectedTicket.auditNotes || '';
-      const newNotes = existingNotes
-        ? `${existingNotes}\n[${new Date().toLocaleString()}] ${auditNote}`
+      const existing = selectedTicket.auditNotes || '';
+      const updated  = existing
+        ? `${existing}\n[${new Date().toLocaleString()}] ${auditNote}`
         : `[${new Date().toLocaleString()}] ${auditNote}`;
-      updateTicket(selectedTicket.id, { auditNotes: newNotes });
+      updateTicket(selectedTicket.id, { auditNotes: updated });
       setAuditNote('');
       setSelectedTicket(null);
     }
   };
 
+  /* ── Helpers ── */
+  const capacityPct   = maxInBuilding > 0 ? inBuildingCount / maxInBuilding : 0;
+  const capacityColor = capacityPct >= 1 ? '#FF3B30' : capacityPct >= 0.8 ? '#FF9F0A' : '#34C759';
+
   return (
     <div className="flex flex-col gap-2 h-full overflow-hidden" data-tour="reception-dashboard">
-      {/* Top Row: Waiting Room + In Consultation */}
+
+      {/* ── Top row ─────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 flex-shrink-0">
 
-        {/* Waiting Room Capacity Grid */}
+        {/* Waiting Room Grid */}
         <div
-          className="lg:col-span-8 bg-white rounded-lg shadow-sm border border-slate-100 flex-shrink-0 p-2"
-          style={{ height: 'calc((100vh - 200px) * 0.30)' }}
+          className="lg:col-span-8 bg-white rounded-xl p-3 flex-shrink-0"
+          style={{
+            height: 'calc((100vh - 200px) * 0.30)',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+          }}
           data-tour="capacity-gate"
         >
-          <div className="flex items-center justify-between mb-2 h-5">
-            <h3 className="text-slate-400 text-[9px] font-bold uppercase tracking-widest">
-              Waiting Room ({inBuildingCount}/{maxInBuilding})
-            </h3>
+          {/* Header row */}
+          <div className="flex items-center justify-between mb-2" style={{ height: '20px' }}>
+            <span className="text-[11px] font-semibold text-[#AEAEB2] uppercase tracking-wider">
+              Waiting Room
+            </span>
+            {/* Capacity pill */}
+            <span
+              className="text-[11px] font-semibold px-2 py-0.5 rounded-full tabular-nums"
+              style={{ background: `${capacityColor}18`, color: capacityColor }}
+            >
+              {inBuildingCount} / {maxInBuilding}
+            </span>
           </div>
+
           <div
             className="grid gap-1.5"
             style={{
               gridTemplateColumns: 'repeat(5, 1fr)',
               gridTemplateRows: 'repeat(2, 1fr)',
-              height: 'calc(100% - 25px)',
-              width: '100%'
+              height: 'calc(100% - 22px)',
+              width: '100%',
             }}
           >
             {Array.from({ length: 10 }).map((_, index) => {
-              const spotNumber = index + 1;
-              const sortedInBuilding = [...inBuilding].sort((a, b) => a.queueNumber - b.queueNumber);
-              const patientInSpot = sortedInBuilding[index];
-              const isEmpty = spotNumber > maxInBuilding;
+              const spotNumber      = index + 1;
+              const patientInSpot   = inBuilding[index];
+              const isOverCapacity  = spotNumber > maxInBuilding;
 
               return (
                 <div
                   key={index}
                   onClick={() => patientInSpot && setSelectedTicket(patientInSpot)}
-                  className={`rounded-md flex flex-col items-center justify-center border-2 transition-all ${
+                  className={`rounded-[10px] flex flex-col items-center justify-center transition-all ${
                     patientInSpot
-                      ? 'bg-green-50 border-green-300 cursor-pointer hover:border-green-400'
-                      : 'border-dashed border-slate-200 bg-slate-50'
+                      ? 'cursor-pointer hover:opacity-90'
+                      : 'border border-dashed'
                   }`}
-                  style={{ width: '100%', height: '100%', minHeight: 0 }}
+                  style={{
+                    width: '100%', height: '100%', minHeight: 0,
+                    ...(patientInSpot
+                      ? { background: '#F0FDF4', border: '1px solid #86EFAC' }
+                      : { borderColor: '#E5E5EA', background: '#FAFAFA' }),
+                    ...(isOverCapacity ? { opacity: 0.35 } : {}),
+                  }}
                 >
                   {patientInSpot ? (
                     <>
-                      <span className="text-lg font-black text-green-700">{patientInSpot.queueNumber}</span>
-                      <span className="text-[10px] uppercase font-bold tracking-tighter text-green-600 mt-1 leading-none">
+                      <span className="text-[15px] font-bold text-[#16A34A] tabular-nums leading-none">
+                        {patientInSpot.queueNumber}
+                      </span>
+                      <span className="text-[10px] font-semibold text-[#16A34A]/80 mt-0.5 leading-none truncate px-1 max-w-full">
                         {patientInSpot.name.split(' ')[0].substring(0, 8)}
                       </span>
                     </>
                   ) : (
                     <>
-                      <span className="text-slate-300 text-base font-black">#{spotNumber}</span>
-                      <span className="text-[10px] uppercase font-bold tracking-tighter text-slate-300 mt-1 leading-none">
-                        {isEmpty ? '' : spotNumber === 1 ? '(NEXT)' : 'Empty'}
+                      <span className="text-[13px] font-semibold text-[#D1D1D6]">
+                        {spotNumber}
+                      </span>
+                      <span className="text-[9px] font-medium text-[#D1D1D6] mt-0.5 leading-none">
+                        {spotNumber === 1 ? 'next' : ''}
                       </span>
                     </>
                   )}
@@ -116,151 +149,162 @@ const ReceptionDashboard: React.FC<ReceptionDashboardProps> = ({ tickets, update
           </div>
         </div>
 
-        {/* In Consultation Sidebar */}
-        <div className="lg:col-span-4 flex flex-col gap-1.5">
-          <div
-            className="bg-slate-900 text-white rounded-xl relative overflow-hidden flex-shrink-0 p-3"
-            style={{ height: 'calc((100vh - 200px) * 0.30)' }}
-          >
-            <div className="relative z-10 h-full flex flex-col">
-              <h3 className="text-slate-400 text-[9px] font-bold uppercase mb-2 tracking-widest flex-shrink-0">
-                In Consultation
-              </h3>
-              <div className="flex flex-col items-center justify-center flex-1 text-center">
-                {inService.length > 0 ? (
-                  <>
-                    <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center text-xl font-black mb-1 shadow-[0_0_15px_rgba(34,197,94,0.4)]">
-                      {inService[0].queueNumber}
-                    </div>
-                    <p className="text-xs font-bold mb-0.5">{inService[0].name}</p>
-                    {inService[0].memberId && (
-                      <p className="text-[9px] text-green-300 mb-0.5">ID: {inService[0].memberId}</p>
-                    )}
-                    {inService[0].tellerId && (
-                      <p className="text-[9px] text-green-300 mb-0.5">Dr: {inService[0].tellerId}</p>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <div className="w-12 h-12 border-2 border-dashed border-slate-700 rounded-xl flex items-center justify-center text-slate-700 mb-1">
-                      <UserCheck size={16} />
-                    </div>
-                    <p className="text-slate-500 italic text-[9px]">No active consultation</p>
-                  </>
+        {/* In Consultation panel */}
+        <div
+          className="lg:col-span-4 rounded-xl relative overflow-hidden flex-shrink-0 p-3 flex flex-col glass-dark"
+          style={{ height: 'calc((100vh - 200px) * 0.30)' }}
+        >
+          <p className="text-[11px] font-semibold text-white/40 uppercase tracking-wider mb-2 flex-shrink-0">
+            In Consultation
+          </p>
+          <div className="flex flex-col items-center justify-center flex-1 text-center">
+            {inService.length > 0 ? (
+              <>
+                <div
+                  className="w-11 h-11 rounded-xl flex items-center justify-center text-[18px] font-bold text-white mb-2 tabular-nums"
+                  style={{ background: '#34C759', boxShadow: '0 0 18px rgba(52,199,89,0.40)' }}
+                >
+                  {inService[0].queueNumber}
+                </div>
+                <p className="text-[13px] font-semibold text-white leading-tight">
+                  {inService[0].name}
+                </p>
+                {inService[0].memberId && (
+                  <p className="text-[10px] text-white/40 mt-0.5">ID: {inService[0].memberId}</p>
                 )}
-              </div>
-            </div>
-            <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-blue-600 rounded-full blur-[40px] opacity-20" />
+                {inService[0].tellerId && (
+                  <p className="text-[10px] text-[#34C759]/80 mt-0.5">Dr: {inService[0].tellerId}</p>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-2"
+                  style={{ border: '1.5px dashed rgba(255,255,255,0.15)' }}>
+                  <Stethoscope size={18} className="text-white/25" />
+                </div>
+                <p className="text-[11px] text-white/30 italic">No active consultation</p>
+              </>
+            )}
           </div>
+          {/* Ambient glow */}
+          <div className="absolute -bottom-8 -right-8 w-28 h-28 rounded-full blur-[40px]"
+            style={{ background: '#0071E3', opacity: 0.15 }} />
         </div>
+
       </div>
 
-      {/* Pre-Arrival Queue — Full Width Below */}
-      <div className="bg-white rounded-lg shadow-sm border border-slate-100 flex-1 flex flex-col min-h-0 p-2" style={{ minHeight: 0, width: '100%' }}>
-        <h3 className="text-slate-400 text-[9px] font-bold uppercase tracking-widest mb-1.5 flex-shrink-0">
-          Pre-Arrival ({remoteWaiting.length})
-        </h3>
-        {remoteWaiting.length > 0 ? (
-          <div
-            className="grid gap-0.5 overflow-y-auto flex-1 min-h-0"
-            style={{
-              gridTemplateColumns: 'repeat(10, 1fr)',
-              gridTemplateRows: 'repeat(5, 1fr)',
-              width: '100%'
-            }}
-          >
-            {Array.from({ length: 50 }).map((_, index) => {
-              const spotNumber = index + 11;
-              const ticket = remoteWaiting[index];
-              if (!ticket) {
-                return (
-                  <div
-                    key={`empty-${index}`}
-                    className="rounded-sm flex flex-col items-center justify-center border border-dashed border-slate-200 bg-slate-50"
-                    style={{ width: '100%', height: '100%', minHeight: 0 }}
-                  >
-                    <span className="text-slate-200 text-[10px] font-black">#{spotNumber}</span>
-                  </div>
-                );
-              }
-              return (
-                <div
-                  key={ticket.id}
-                  onClick={() => setSelectedTicket(ticket)}
-                  className="rounded-sm flex flex-col items-center justify-center border border-slate-200 bg-slate-50 text-slate-400 hover:border-slate-300 hover:bg-slate-100 transition-all cursor-pointer"
-                  style={{ width: '100%', height: '100%', minHeight: 0 }}
-                >
-                  <span className="text-[10px] font-black">{ticket.queueNumber}</span>
-                  <span className="text-[6px] uppercase font-bold tracking-tighter opacity-70 mt-0.5 leading-none">
-                    {ticket.name.split(' ')[0].substring(0, 7)}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div
-            className="grid gap-0.5 flex-1"
-            style={{
-              gridTemplateColumns: 'repeat(10, 1fr)',
-              gridTemplateRows: 'repeat(5, 1fr)',
-              width: '100%'
-            }}
-          >
-            {Array.from({ length: 50 }).map((_, index) => {
-              const spotNumber = index + 11;
+      {/* ── Pre-Arrival Queue ─────────────────────────────── */}
+      <div
+        className="bg-white rounded-xl p-3 flex-1 flex flex-col min-h-0"
+        style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}
+      >
+        <div className="flex items-center justify-between mb-2 flex-shrink-0">
+          <span className="text-[11px] font-semibold text-[#AEAEB2] uppercase tracking-wider">
+            Pre-Arrival
+          </span>
+          {remoteWaiting.length > 0 && (
+            <span className="text-[11px] font-semibold text-[#8E8E93]">
+              {remoteWaiting.length} waiting
+            </span>
+          )}
+        </div>
+
+        <div
+          className="grid gap-[3px] flex-1 min-h-0 overflow-y-auto"
+          style={{ gridTemplateColumns: 'repeat(10, 1fr)', gridTemplateRows: 'repeat(5, 1fr)' }}
+        >
+          {Array.from({ length: 50 }).map((_, index) => {
+            const spotNumber = index + 11;
+            const ticket     = remoteWaiting[index];
+
+            if (!ticket) {
               return (
                 <div
                   key={`empty-${index}`}
-                  className="rounded-sm flex flex-col items-center justify-center border border-dashed border-slate-200 bg-slate-50"
-                  style={{ width: '100%', height: '100%', minHeight: 0 }}
+                  className="rounded-[6px] flex flex-col items-center justify-center border border-dashed"
+                  style={{ borderColor: '#E5E5EA', background: '#FAFAFA', width: '100%', height: '100%', minHeight: 0 }}
                 >
-                  <span className="text-slate-200 text-[10px] font-black">#{spotNumber}</span>
+                  <span className="text-[9px] font-medium text-[#D1D1D6]">#{spotNumber}</span>
                 </div>
               );
-            })}
-          </div>
-        )}
+            }
+            return (
+              <div
+                key={ticket.id}
+                onClick={() => setSelectedTicket(ticket)}
+                className="rounded-[6px] flex flex-col items-center justify-center cursor-pointer transition-all hover:opacity-80"
+                style={{
+                  background: '#F5F5F7',
+                  border: '1px solid #E5E5EA',
+                  width: '100%', height: '100%', minHeight: 0,
+                }}
+              >
+                <span className="text-[10px] font-bold text-[#3C3C43] tabular-nums">{ticket.queueNumber}</span>
+                <span className="text-[8px] font-medium text-[#AEAEB2] mt-0.5 leading-none truncate px-0.5 max-w-full">
+                  {ticket.name.split(' ')[0].substring(0, 7)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Triage / Audit Notes Modal */}
+      {/* ── Audit / Triage Modal ──────────────────────────── */}
       {selectedTicket && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-3xl p-8 shadow-2xl">
-            <h3 className="text-2xl font-black text-slate-800 mb-2">Triage / Audit Note</h3>
-            <p className="text-slate-600 mb-4">
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl p-6"
+            style={{
+              background: 'rgba(255,255,255,0.97)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+            }}
+          >
+            <h3 className="text-[18px] font-semibold text-[#1D1D1F] tracking-tight mb-0.5">
+              Triage note
+            </h3>
+            <p className="text-[13px] text-[#8E8E93] mb-4">
               Token #{selectedTicket.queueNumber} — {selectedTicket.name}
             </p>
 
             {selectedTicket.auditNotes && (
-              <div className="mb-4 p-4 bg-slate-50 rounded-xl max-h-40 overflow-y-auto">
-                <p className="text-xs text-slate-500 font-bold mb-2">Existing Notes:</p>
-                <p className="text-sm text-slate-700 whitespace-pre-wrap">{selectedTicket.auditNotes}</p>
+              <div className="mb-4 p-3.5 bg-[#F5F5F7] rounded-xl max-h-32 overflow-y-auto">
+                <p className="text-[11px] font-semibold text-[#AEAEB2] uppercase tracking-wider mb-1.5">
+                  Existing notes
+                </p>
+                <p className="text-[13px] text-[#3C3C43] whitespace-pre-wrap leading-relaxed">
+                  {selectedTicket.auditNotes}
+                </p>
               </div>
             )}
 
             <textarea
               value={auditNote}
-              onChange={(e) => setAuditNote(e.target.value)}
-              placeholder="Enter triage note, observation, or exception details..."
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all mb-4"
+              onChange={e => setAuditNote(e.target.value)}
+              placeholder="Enter triage note, observation, or exception…"
+              className="w-full px-3.5 py-3 text-[14px] rounded-xl bg-[#F5F5F7] border border-transparent text-[#1D1D1F] placeholder:text-[#AEAEB2] outline-none focus:bg-white focus:border-[#0071E3]/60 focus:ring-2 focus:ring-[#0071E3]/12 transition-all mb-4 resize-none"
               rows={4}
             />
 
-            <div className="flex gap-3">
+            <div className="flex gap-2.5">
               <button
                 onClick={handleAddAuditNote}
                 disabled={!auditNote.trim()}
-                className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                className={`flex-1 py-2.5 rounded-xl text-[14px] font-semibold flex items-center justify-center gap-2 transition-all ${
+                  auditNote.trim()
+                    ? 'bg-[#0071E3] hover:bg-[#0077ED] text-white shadow-[0_2px_6px_rgba(0,113,227,0.25)]'
+                    : 'bg-[#E5E5EA] text-[#AEAEB2] cursor-not-allowed'
+                }`}
               >
-                <FileText size={18} /> Save Note
+                <FileText size={15} /> Save note
               </button>
               <button
-                onClick={() => {
-                  setSelectedTicket(null);
-                  setAuditNote('');
-                }}
-                className="px-6 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-all"
+                onClick={() => { setSelectedTicket(null); setAuditNote(''); }}
+                className="px-5 py-2.5 rounded-xl text-[14px] font-medium text-[#6E6E73] bg-[#F5F5F7] hover:bg-[#EBEBF0] transition-all"
               >
                 Cancel
               </button>

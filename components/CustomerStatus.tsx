@@ -4,12 +4,12 @@ import { Users, Clock, Bell, ChevronLeft, Star, HeartPulse } from 'lucide-react'
 
 const VISIT_REASON_LABELS: Record<ServiceCategory, string> = {
   [ServiceCategory.GENERAL_CHECKUP]: 'General Check-up',
-  [ServiceCategory.FOLLOW_UP]: 'Follow-up Visit',
-  [ServiceCategory.CONSULTATION]: 'Consultation',
-  [ServiceCategory.VACCINATION]: 'Vaccination',
-  [ServiceCategory.EMERGENCY]: 'Emergency / Urgent',
-  [ServiceCategory.LAB_RESULTS]: 'Lab Results',
-  [ServiceCategory.OTHER]: 'Other',
+  [ServiceCategory.FOLLOW_UP]:       'Follow-up Visit',
+  [ServiceCategory.CONSULTATION]:    'Consultation',
+  [ServiceCategory.VACCINATION]:     'Vaccination',
+  [ServiceCategory.EMERGENCY]:       'Emergency / Urgent',
+  [ServiceCategory.LAB_RESULTS]:     'Lab Results',
+  [ServiceCategory.OTHER]:           'Other',
 };
 
 interface CustomerStatusProps {
@@ -21,37 +21,36 @@ interface CustomerStatusProps {
   onConfirmInBuilding?: (id: string) => void;
 }
 
-const CustomerStatus: React.FC<CustomerStatusProps> = ({ ticket, allTickets, branch, onCancel, onSubmitFeedback, onConfirmInBuilding }) => {
+const CustomerStatus: React.FC<CustomerStatusProps> = ({
+  ticket, allTickets, branch, onCancel, onSubmitFeedback, onConfirmInBuilding,
+}) => {
   const gracePeriodSeconds = branch.gracePeriodMinutes * 60;
-  const [timeLeft, setTimeLeft] = useState(gracePeriodSeconds);
-  const [showPoll, setShowPoll] = useState(false);
-  const [feedback, setFeedback] = useState<number | null>(null);
+  const [timeLeft, setTimeLeft]   = useState(gracePeriodSeconds);
+  const [showPoll, setShowPoll]   = useState(false);
+  const [feedback, setFeedback]   = useState<number | null>(null);
 
-  // Filter tickets for same branch that are still active in the queue
   const activeTickets = allTickets.filter(t =>
     t.branchId === ticket.branchId &&
-    (t.status === TicketStatus.WAITING || t.status === TicketStatus.REMOTE_WAITING ||
-     t.status === TicketStatus.CALLED || t.status === TicketStatus.ELIGIBLE_FOR_ENTRY ||
-     t.status === TicketStatus.ARRIVED || t.status === TicketStatus.IN_BUILDING)
+    (t.status === TicketStatus.WAITING ||
+     t.status === TicketStatus.REMOTE_WAITING ||
+     t.status === TicketStatus.CALLED ||
+     t.status === TicketStatus.ELIGIBLE_FOR_ENTRY ||
+     t.status === TicketStatus.ARRIVED ||
+     t.status === TicketStatus.IN_BUILDING),
   );
   const sortedTickets = [...activeTickets].sort((a, b) => a.queueNumber - b.queueNumber);
-  const peopleAhead = sortedTickets.findIndex(t => t.id === ticket.id);
-  const eta = (peopleAhead + 1) * branch.avgTransactionTime;
+  const peopleAhead   = sortedTickets.findIndex(t => t.id === ticket.id);
+  const eta           = (peopleAhead + 1) * branch.avgTransactionTime;
 
-  // Countdown timer for ELIGIBLE_FOR_ENTRY grace period
   useEffect(() => {
     let timer: ReturnType<typeof setInterval>;
     if (ticket.status === TicketStatus.ELIGIBLE_FOR_ENTRY && ticket.eligibleForEntryAt) {
-      const elapsed = Math.floor((Date.now() - ticket.eligibleForEntryAt) / 1000);
+      const elapsed   = Math.floor((Date.now() - ticket.eligibleForEntryAt) / 1000);
       const remaining = gracePeriodSeconds - elapsed;
       if (remaining > 0) {
         setTimeLeft(remaining);
         timer = setInterval(() => {
-          setTimeLeft(prev => {
-            const next = prev - 1;
-            if (next <= 0) return 0;
-            return next;
-          });
+          setTimeLeft(prev => (prev - 1 <= 0 ? 0 : prev - 1));
         }, 1000);
       } else {
         setTimeLeft(0);
@@ -60,8 +59,7 @@ const CustomerStatus: React.FC<CustomerStatusProps> = ({ ticket, allTickets, bra
       timer = setInterval(() => {
         setTimeLeft(prev => {
           const next = prev - 1;
-          const oneMinuteBefore = branch.gracePeriodMinutes * 60 - 60;
-          if (next === oneMinuteBefore) setShowPoll(true);
+          if (next === branch.gracePeriodMinutes * 60 - 60) setShowPoll(true);
           return next;
         });
       }, 1000);
@@ -69,178 +67,298 @@ const CustomerStatus: React.FC<CustomerStatusProps> = ({ ticket, allTickets, bra
     return () => clearInterval(timer);
   }, [ticket.status, ticket.eligibleForEntryAt, timeLeft, branch.gracePeriodMinutes, gracePeriodSeconds]);
 
-  const isCalled = ticket.status === TicketStatus.CALLED || ticket.status === TicketStatus.ELIGIBLE_FOR_ENTRY;
+  const isCalled     = ticket.status === TicketStatus.CALLED || ticket.status === TicketStatus.ELIGIBLE_FOR_ENTRY;
   const isInBuilding = ticket.status === TicketStatus.IN_BUILDING || ticket.status === TicketStatus.ARRIVED;
-  const isInService = ticket.status === TicketStatus.IN_SERVICE || ticket.status === TicketStatus.IN_TRANSACTION;
-  const isCompleted = ticket.status === TicketStatus.COMPLETED || ticket.status === TicketStatus.SERVED;
+  const isInService  = ticket.status === TicketStatus.IN_SERVICE  || ticket.status === TicketStatus.IN_TRANSACTION;
+  const isCompleted  = ticket.status === TicketStatus.COMPLETED   || ticket.status === TicketStatus.SERVED;
 
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
+  /* ── Feedback screen ────────────────────────────────────── */
   if (isCompleted && !ticket.feedbackStars) {
     return (
-      <div className="max-w-md mx-auto bg-white rounded-2xl shadow-xl p-8 text-center">
-        <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
-          <Star size={32} fill="currentColor" />
-        </div>
-        <h2 className="text-2xl font-bold mb-2">Consultation Complete!</h2>
-        <p className="text-slate-600 mb-8">How would you rate your experience today?</p>
-        <div className="flex justify-center gap-2 mb-8">
-          {[1, 2, 3, 4, 5].map(star => (
-            <button
-              key={star}
-              onClick={() => setFeedback(star)}
-              className={`p-2 transition-transform hover:scale-110 ${feedback && feedback >= star ? 'text-yellow-400' : 'text-slate-200'}`}
-            >
-              <Star size={40} fill={feedback && feedback >= star ? 'currentColor' : 'none'} />
-            </button>
-          ))}
-        </div>
-        <button
-          disabled={!feedback}
-          onClick={() => feedback && onSubmitFeedback(ticket.id, feedback)}
-          className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold disabled:opacity-50"
+      <div className="max-w-[420px] mx-auto pt-4">
+        <div
+          className="bg-white rounded-2xl p-8 text-center"
+          style={{ boxShadow: '0 2px 20px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.05)' }}
         >
-          Submit Feedback
-        </button>
+          <div className="w-14 h-14 bg-[#E8FAF0] rounded-full flex items-center justify-center mx-auto mb-5">
+            <Star size={28} className="text-[#34C759]" fill="currentColor" />
+          </div>
+          <h2 className="text-[20px] font-semibold text-[#1D1D1F] tracking-tight mb-1">
+            Consultation complete
+          </h2>
+          <p className="text-[14px] text-[#8E8E93] mb-7">How was your experience today?</p>
+          <div className="flex justify-center gap-1.5 mb-7">
+            {[1, 2, 3, 4, 5].map(star => (
+              <button
+                key={star}
+                onClick={() => setFeedback(star)}
+                className={`p-1 transition-transform hover:scale-110 active:scale-95 ${
+                  feedback && feedback >= star ? 'text-[#FF9F0A]' : 'text-[#D1D1D6]'
+                }`}
+              >
+                <Star size={36} fill={feedback && feedback >= star ? 'currentColor' : 'none'} />
+              </button>
+            ))}
+          </div>
+          <button
+            disabled={!feedback}
+            onClick={() => feedback && onSubmitFeedback(ticket.id, feedback)}
+            className={`w-full py-3 rounded-xl text-[15px] font-semibold transition-all ${
+              feedback
+                ? 'bg-[#0071E3] hover:bg-[#0077ED] text-white shadow-[0_2px_8px_rgba(0,113,227,0.28)]'
+                : 'bg-[#E5E5EA] text-[#AEAEB2] cursor-not-allowed'
+            }`}
+          >
+            Submit Feedback
+          </button>
+        </div>
       </div>
     );
   }
 
+  /* ── Status colour scheme ───────────────────────────────── */
+  const statusTheme = isCalled
+    ? { bg: '#FFF7ED', accent: '#F59E0B', text: '#92400E', badge: '#FEF3C7' }
+    : isInBuilding
+    ? { bg: '#F0FDF4', accent: '#16A34A', text: '#14532D', badge: '#DCFCE7' }
+    : isInService
+    ? { bg: '#EFF6FF', accent: '#2563EB', text: '#1E3A8A', badge: '#DBEAFE' }
+    : { bg: '#EFF6FF', accent: '#0071E3', text: '#1E3A8A', badge: '#DBEAFE' };
+
   return (
-    <div className="max-w-md mx-auto" data-tour="customer-status">
+    <div className="max-w-[420px] mx-auto pt-4 pb-8" data-tour="customer-status">
+
+      {/* Back */}
       <button
         onClick={onCancel}
-        className="flex items-center gap-2 text-slate-500 mb-6 hover:text-slate-800 transition-colors"
+        className="flex items-center gap-1.5 text-[14px] text-[#6E6E73] hover:text-[#1D1D1F] mb-5 transition-colors"
       >
-        <ChevronLeft size={20} /> Back to Home
+        <ChevronLeft size={18} strokeWidth={2} /> Back
       </button>
 
-      <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100">
-        <div className={`p-8 text-white ${isCalled ? 'bg-orange-500' : isInBuilding ? 'bg-green-600' : 'bg-blue-600'}`}>
-          <div className="flex justify-between items-start">
+      <div
+        className="bg-white rounded-2xl overflow-hidden"
+        style={{ boxShadow: '0 2px 20px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.05)' }}
+      >
+
+        {/* ── Status header ────────────────────────────── */}
+        <div className="p-6" style={{ background: statusTheme.bg }}>
+          <div className="flex items-start justify-between mb-1">
             <div>
-              <p className="text-blue-100 font-medium">Hello, {ticket.name}</p>
-              {ticket.memberId && (
-                <p className="text-blue-200 text-xs mt-1">Patient ID: {ticket.memberId}</p>
-              )}
-              <h2 className="text-4xl font-black mt-1">#{ticket.queueNumber}</h2>
-            </div>
-            <div className="bg-white/20 p-3 rounded-xl backdrop-blur-md">
-              <Bell size={24} />
-            </div>
-          </div>
-
-          <div className="mt-4 flex items-center gap-2 text-blue-100 text-sm">
-            <HeartPulse size={14} />
-            <span>{branch.name}</span>
-          </div>
-
-          {isCalled ? (
-            <div className="mt-6 bg-white/10 rounded-xl p-4 border border-white/20" data-tour="customer-notification">
-              <p className="text-sm font-bold">
-                {ticket.status === TicketStatus.ELIGIBLE_FOR_ENTRY
-                  ? 'YOU HAVE BEEN CALLED — PLEASE CHECK IN AT RECEPTION'
-                  : 'PLEASE PROCEED TO THE RECEPTION DESK'}
+              <p className="text-[13px] font-medium" style={{ color: statusTheme.accent }}>
+                {ticket.name}
               </p>
-              {ticket.status === TicketStatus.ELIGIBLE_FOR_ENTRY ? (
-                <>
-                  <p className="text-lg mt-1">You have {branch.gracePeriodMinutes} minutes to confirm your arrival</p>
-                  <p className="text-3xl font-mono mt-2">{formatTime(timeLeft)}</p>
-                </>
-              ) : (
-                <p className="text-3xl font-mono mt-1">{formatTime(timeLeft)}</p>
+              {ticket.memberId && (
+                <p className="text-[11px] mt-0.5" style={{ color: statusTheme.accent, opacity: 0.7 }}>
+                  Patient ID: {ticket.memberId}
+                </p>
+              )}
+            </div>
+            <div
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
+              style={{ background: statusTheme.badge, color: statusTheme.accent }}
+            >
+              <HeartPulse size={11} strokeWidth={2.5} />
+              {branch.name}
+            </div>
+          </div>
+
+          {/* Queue number */}
+          <div className="mt-3 mb-4">
+            <p className="text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: statusTheme.accent, opacity: 0.6 }}>
+              Your number
+            </p>
+            <span
+              className="text-[56px] font-bold leading-none tabular-nums tracking-tight"
+              style={{ color: statusTheme.accent }}
+            >
+              #{ticket.queueNumber}
+            </span>
+          </div>
+
+          {/* Status block */}
+          {isCalled ? (
+            <div
+              className="rounded-xl p-4"
+              style={{ background: statusTheme.badge }}
+              data-tour="customer-notification"
+            >
+              <p className="text-[13px] font-semibold mb-1" style={{ color: statusTheme.text }}>
+                {ticket.status === TicketStatus.ELIGIBLE_FOR_ENTRY
+                  ? 'You have been called — please check in at reception'
+                  : 'Please proceed to the reception desk'}
+              </p>
+              <p className="text-[32px] font-semibold font-mono leading-none" style={{ color: statusTheme.accent }}>
+                {formatTime(timeLeft)}
+              </p>
+              {ticket.status === TicketStatus.ELIGIBLE_FOR_ENTRY && (
+                <p className="text-[12px] mt-1.5" style={{ color: statusTheme.accent, opacity: 0.7 }}>
+                  {branch.gracePeriodMinutes} minutes to confirm your arrival
+                </p>
               )}
             </div>
           ) : isInBuilding ? (
-            <div className="mt-6 bg-white/10 rounded-xl p-4 border border-white/20">
-              <p className="text-sm font-bold">YOU ARE IN THE WAITING ROOM</p>
-              <p className="text-lg mt-1">A doctor or nurse will call you shortly</p>
+            <div
+              className="rounded-xl p-4"
+              style={{ background: statusTheme.badge }}
+            >
+              <p className="text-[13px] font-semibold" style={{ color: statusTheme.text }}>
+                You are in the waiting room
+              </p>
+              <p className="text-[13px] mt-0.5" style={{ color: statusTheme.accent, opacity: 0.8 }}>
+                A doctor or nurse will call you shortly.
+              </p>
             </div>
           ) : isInService ? (
-            <div className="mt-6 bg-white/10 rounded-xl p-4 border border-white/20">
-              <p className="text-sm font-bold">CONSULTATION IN PROGRESS</p>
-              <p className="text-lg mt-1">You are currently with the doctor</p>
+            <div
+              className="rounded-xl p-4"
+              style={{ background: statusTheme.badge }}
+            >
+              <p className="text-[13px] font-semibold" style={{ color: statusTheme.text }}>
+                Consultation in progress
+              </p>
+              <p className="text-[13px] mt-0.5" style={{ color: statusTheme.accent, opacity: 0.8 }}>
+                You are currently with the doctor.
+              </p>
             </div>
           ) : (
-            <div className="mt-6 flex gap-4" data-tour="customer-eta">
-              <div className="flex-1 bg-white/10 rounded-xl p-3 border border-white/20">
-                <p className="text-[10px] uppercase font-bold tracking-wider opacity-70">Ahead</p>
+            <div className="flex gap-3" data-tour="customer-eta">
+              <div
+                className="flex-1 rounded-xl p-3.5"
+                style={{ background: statusTheme.badge }}
+              >
+                <p className="text-[11px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: statusTheme.accent, opacity: 0.6 }}>
+                  Ahead
+                </p>
                 <div className="flex items-center gap-2">
-                  <Users size={16} />
-                  <span className="text-xl font-bold">{peopleAhead} Patient{peopleAhead !== 1 ? 's' : ''}</span>
+                  <Users size={15} style={{ color: statusTheme.accent }} />
+                  <span className="text-[18px] font-semibold" style={{ color: statusTheme.accent }}>
+                    {peopleAhead} {peopleAhead !== 1 ? 'patients' : 'patient'}
+                  </span>
                 </div>
               </div>
-              <div className="flex-1 bg-white/10 rounded-xl p-3 border border-white/20">
-                <p className="text-[10px] uppercase font-bold tracking-wider opacity-70">Est. Wait</p>
+              <div
+                className="flex-1 rounded-xl p-3.5"
+                style={{ background: statusTheme.badge }}
+              >
+                <p className="text-[11px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: statusTheme.accent, opacity: 0.6 }}>
+                  Est. wait
+                </p>
                 <div className="flex items-center gap-2">
-                  <Clock size={16} />
-                  <span className="text-xl font-bold">{eta} mins</span>
+                  <Clock size={15} style={{ color: statusTheme.accent }} />
+                  <span className="text-[18px] font-semibold" style={{ color: statusTheme.accent }}>
+                    {eta} min
+                  </span>
                 </div>
               </div>
             </div>
           )}
         </div>
 
-        <div className="p-8 space-y-6">
-          <div className="space-y-4">
-            <h3 className="font-bold text-slate-800">Visit Timeline</h3>
-            <div className="space-y-2">
-              <TimelineItem label="Joined Queue" active={true} sub={new Date(ticket.joinedAt).toLocaleTimeString()} />
+        {/* ── Body ─────────────────────────────────────── */}
+        <div className="p-6 space-y-5">
+
+          {/* Timeline */}
+          <div>
+            <p className="text-[11px] font-semibold text-[#AEAEB2] uppercase tracking-wider mb-3">
+              Visit timeline
+            </p>
+            <div className="space-y-0">
               <TimelineItem
-                label="Called to Check In"
-                active={isCalled || isInBuilding || isInService || isCompleted}
-                sub={isCalled ? (ticket.status === TicketStatus.ELIGIBLE_FOR_ENTRY ? 'Please proceed to reception' : 'Expiring soon') : ''}
+                label="Joined queue"
+                sub={new Date(ticket.joinedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                active
+                isLast={false}
               />
-              <TimelineItem label="In Waiting Room" active={isInBuilding || isInService || isCompleted} />
-              <TimelineItem label="Consultation Started" active={isInService || isCompleted} />
+              <TimelineItem
+                label="Called to check in"
+                sub={isCalled ? (ticket.status === TicketStatus.ELIGIBLE_FOR_ENTRY ? 'Please proceed to reception' : 'Expiring soon') : ''}
+                active={isCalled || isInBuilding || isInService || isCompleted}
+                isLast={false}
+              />
+              <TimelineItem
+                label="In waiting room"
+                sub=""
+                active={isInBuilding || isInService || isCompleted}
+                isLast={false}
+              />
+              <TimelineItem
+                label="Consultation started"
+                sub=""
+                active={isInService || isCompleted}
+                isLast
+              />
             </div>
           </div>
 
+          {/* Visit reason */}
           {ticket.serviceCategory && (
-            <div className="p-4 bg-slate-50 rounded-xl">
-              <p className="text-xs text-slate-500 font-bold uppercase mb-1">Visit Reason</p>
-              <p className="text-sm font-semibold text-slate-800">
+            <div className="px-4 py-3 bg-[#F5F5F7] rounded-xl">
+              <p className="text-[11px] font-semibold text-[#AEAEB2] uppercase tracking-wider mb-1">
+                Visit reason
+              </p>
+              <p className="text-[14px] font-medium text-[#1D1D1F]">
                 {VISIT_REASON_LABELS[ticket.serviceCategory] ?? ticket.serviceCategory.replace(/_/g, ' ')}
               </p>
             </div>
           )}
 
+          {/* Action button */}
           {ticket.status === TicketStatus.ELIGIBLE_FOR_ENTRY && onConfirmInBuilding ? (
             <button
               onClick={() => onConfirmInBuilding(ticket.id)}
-              className="w-full py-4 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 rounded-xl text-[15px] font-semibold text-white bg-[#34C759] hover:bg-[#28BD4E] shadow-[0_2px_8px_rgba(52,199,89,0.30)] transition-all active:scale-[0.98] flex items-center justify-center gap-2"
             >
-              <HeartPulse size={18} /> Confirm Arrival at Clinic
+              <HeartPulse size={17} strokeWidth={2} /> Confirm arrival at clinic
             </button>
           ) : (
-            <button className="w-full py-4 border-2 border-slate-100 rounded-xl text-slate-600 font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
-              <Bell size={18} /> Notify me when I'm next
+            <button
+              className="w-full py-3 rounded-xl text-[15px] font-medium text-[#6E6E73] bg-[#F5F5F7] hover:bg-[#EBEBF0] transition-all flex items-center justify-center gap-2"
+            >
+              <Bell size={17} strokeWidth={2} /> Notify me when I'm next
             </button>
           )}
+
         </div>
       </div>
 
+      {/* ── Presence poll modal ──────────────────────────── */}
       {showPoll && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-end md:items-center justify-center p-4">
-          <div className="bg-white w-full max-w-sm rounded-3xl p-8 animate-in slide-in-from-bottom-8 duration-500 shadow-2xl">
-            <h3 className="text-2xl font-black text-slate-800 mb-2">You're Next!</h3>
-            <p className="text-slate-600 mb-6">Are you currently present at the clinic?</p>
-            <div className="grid grid-cols-2 gap-4">
+        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}>
+          <div
+            className="w-full max-w-sm rounded-2xl p-7"
+            style={{
+              background: 'rgba(255,255,255,0.96)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.20)',
+            }}
+          >
+            <h3 className="text-[20px] font-semibold text-[#1D1D1F] tracking-tight mb-1.5">
+              You're next!
+            </h3>
+            <p className="text-[14px] text-[#6E6E73] mb-6">
+              Are you currently at the clinic?
+            </p>
+            <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => setShowPoll(false)}
-                className="py-4 bg-green-600 text-white rounded-2xl font-bold hover:bg-green-700 transition-all"
+                className="py-3 rounded-xl text-[14px] font-semibold text-white bg-[#34C759] hover:bg-[#28BD4E] transition-all active:scale-[0.97]"
               >
-                YES, I'M HERE
+                Yes, I'm here
               </button>
               <button
                 onClick={() => setShowPoll(false)}
-                className="py-4 bg-slate-100 text-slate-800 rounded-2xl font-bold hover:bg-slate-200 transition-all"
+                className="py-3 rounded-xl text-[14px] font-semibold text-[#3C3C43] bg-[#F5F5F7] hover:bg-[#EBEBF0] transition-all"
               >
-                NOT YET
+                Not yet
               </button>
             </div>
           </div>
@@ -250,12 +368,33 @@ const CustomerStatus: React.FC<CustomerStatusProps> = ({ ticket, allTickets, bra
   );
 };
 
-const TimelineItem = ({ label, active, sub }: { label: string; active: boolean; sub?: string }) => (
-  <div className="flex items-start gap-4">
-    <div className={`mt-1.5 w-3 h-3 rounded-full ${active ? 'bg-blue-600' : 'bg-slate-200'}`} />
-    <div>
-      <p className={`text-sm font-semibold ${active ? 'text-slate-800' : 'text-slate-400'}`}>{label}</p>
-      {sub && <p className="text-xs text-slate-400">{sub}</p>}
+/* ── Timeline item ──────────────────────────────────────── */
+interface TimelineItemProps {
+  label: string;
+  sub?: string;
+  active: boolean;
+  isLast: boolean;
+}
+
+const TimelineItem: React.FC<TimelineItemProps> = ({ label, sub, active, isLast }) => (
+  <div className="flex gap-3">
+    {/* Track */}
+    <div className="flex flex-col items-center">
+      <div
+        className={`mt-[3px] h-[10px] w-[10px] rounded-full flex-shrink-0 transition-colors ${
+          active ? 'bg-[#0071E3]' : 'bg-[#D1D1D6]'
+        }`}
+      />
+      {!isLast && (
+        <div className="w-px flex-1 mt-1 mb-1" style={{ background: active ? '#BFDBFE' : '#E5E5EA', minHeight: '16px' }} />
+      )}
+    </div>
+    {/* Content */}
+    <div className="pb-4">
+      <p className={`text-[14px] font-medium ${active ? 'text-[#1D1D1F]' : 'text-[#AEAEB2]'}`}>
+        {label}
+      </p>
+      {sub && <p className="text-[12px] text-[#8E8E93] mt-0.5">{sub}</p>}
     </div>
   </div>
 );
