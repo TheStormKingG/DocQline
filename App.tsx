@@ -286,7 +286,20 @@ const App: React.FC = () => {
     
     // Add small random delay to ensure unique timestamps when creating multiple tickets quickly
     const joinedAt = Date.now() + Math.random() * 10; // Add 0-10ms random offset
-    
+
+    // If there is capacity in the waiting room right now, the patient walks straight in.
+    // Use ticketsRef to avoid stale closures during rapid batch additions (e.g. tour).
+    const branch = BRANCHES.find(b => b.id === branchId) || BRANCHES[0];
+    const currentInBuilding = ticketsRef.current.filter(
+      t => t.branchId === branchId &&
+        (t.status === TicketStatus.IN_BUILDING ||
+         t.status === TicketStatus.ARRIVED ||
+         t.status === TicketStatus.IN_SERVICE ||
+         t.status === TicketStatus.IN_TRANSACTION),
+    ).length;
+    const hasCapacity = currentInBuilding < branch.maxInBuilding;
+    const initialStatus = hasCapacity ? TicketStatus.IN_BUILDING : TicketStatus.REMOTE_WAITING;
+
     const newTicket: Ticket = {
       id: Math.random().toString(36).substr(2, 9),
       queueNumber: nextNum,
@@ -294,17 +307,17 @@ const App: React.FC = () => {
       phone,
       memberId,
       channel,
-      status: TicketStatus.REMOTE_WAITING, // Start as remote waiting
+      status: initialStatus,
       branchId,
       serviceCategory,
       joinedAt: Math.floor(joinedAt), // Ensure integer timestamp
       statusHistory: [{
         ticketId: '',
-        fromStatus: TicketStatus.REMOTE_WAITING,
-        toStatus: TicketStatus.REMOTE_WAITING,
+        fromStatus: initialStatus,
+        toStatus: initialStatus,
         timestamp: Date.now(),
         triggeredBy: 'customer',
-        reason: 'Joined queue'
+        reason: hasCapacity ? 'Joined queue — checked into waiting room' : 'Joined queue — pre-arrival'
       }]
     };
     // Fix the ticketId in statusHistory
