@@ -7,6 +7,7 @@ import TellerUI from './components/TellerUI';
 import ManagerDashboard from './components/ManagerDashboard';
 import ProductTour from './components/ProductTour';
 import { Layout } from './components/Layout';
+import { TWILIO_FUNCTION_URL } from './config';
 import { 
   loadTicketsFromSupabase, 
   saveTicketToSupabase, 
@@ -72,16 +73,12 @@ const App: React.FC = () => {
 
   // Helper: Send notification via Twilio WhatsApp / SMS
   const sendNotification = async (ticket: Ticket, message: string) => {
-    const functionUrl = import.meta.env.VITE_TWILIO_FUNCTION_URL as string | undefined;
-    console.log(`📱 Notification to ${ticket.name} (${ticket.phone}) via ${ticket.channel}: ${message}`);
+    console.log(`📱 Notification → ${ticket.name} (${ticket.phone}) via ${ticket.channel}: ${message}`);
 
-    if (!functionUrl || functionUrl.includes('XXXX') || !ticket.phone) {
-      // Twilio Function URL not configured yet — log only
-      return;
-    }
+    if (!ticket.phone) return;
 
     try {
-      const res = await fetch(functionUrl, {
+      const res = await fetch(TWILIO_FUNCTION_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -93,6 +90,8 @@ const App: React.FC = () => {
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         console.error('📱 Notification failed:', err);
+      } else {
+        console.log('📱 Notification sent ✓');
       }
     } catch (err) {
       console.error('📱 Notification error:', err);
