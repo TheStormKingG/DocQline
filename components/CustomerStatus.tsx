@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Ticket, TicketStatus, BranchConfig, ServiceCategory } from '../types';
-import { Users, Clock, Bell, ChevronLeft, Star, HeartPulse } from 'lucide-react';
+import { Ticket, TicketStatus, BranchConfig, ServiceCategory, CommsChannel } from '../types';
+import { Users, Clock, Bell, ChevronLeft, Star, HeartPulse, MessageCircle } from 'lucide-react';
 
 const VISIT_REASON_LABELS: Record<ServiceCategory, string> = {
   [ServiceCategory.GENERAL_CHECKUP]: 'General Check-up',
@@ -25,9 +25,11 @@ const CustomerStatus: React.FC<CustomerStatusProps> = ({
   ticket, allTickets, branch, onCancel, onSubmitFeedback, onConfirmInBuilding,
 }) => {
   const gracePeriodSeconds = branch.gracePeriodMinutes * 60;
-  const [timeLeft, setTimeLeft]   = useState(gracePeriodSeconds);
-  const [showPoll, setShowPoll]   = useState(false);
-  const [feedback, setFeedback]   = useState<number | null>(null);
+  const [timeLeft, setTimeLeft]       = useState(gracePeriodSeconds);
+  const [showPoll, setShowPoll]       = useState(false);
+  const [feedback, setFeedback]       = useState<number | null>(null);
+  const OPTIN_KEY = `wa_optin_${ticket.id}`;
+  const [waOptedIn, setWaOptedIn]     = useState(() => localStorage.getItem(OPTIN_KEY) === '1');
 
   const activeTickets = allTickets.filter(t =>
     t.branchId === ticket.branchId &&
@@ -141,6 +143,54 @@ const CustomerStatus: React.FC<CustomerStatusProps> = ({
       >
         <ChevronLeft size={18} strokeWidth={2} /> Back
       </button>
+
+      {/* ── WhatsApp opt-in banner ─────────────────────── */}
+      {ticket.channel === CommsChannel.WHATSAPP && !waOptedIn && (
+        <div
+          className="mb-4 rounded-2xl overflow-hidden"
+          style={{ boxShadow: '0 2px 16px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(0,0,0,0.05)' }}
+        >
+          <div className="bg-[#F0FDF4] px-5 pt-5 pb-4">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-full bg-[#22C55E] flex items-center justify-center flex-shrink-0 mt-0.5">
+                <MessageCircle size={18} className="text-white" strokeWidth={2} />
+              </div>
+              <div className="flex-1">
+                <p className="text-[14px] font-semibold text-[#14532D] leading-tight mb-1">
+                  Activate WhatsApp updates
+                </p>
+                <p className="text-[13px] text-[#166534] leading-snug">
+                  Tap the button below. WhatsApp will open with a pre-filled message — just hit <strong>Send</strong> once.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white px-5 py-3.5 flex items-center gap-3">
+            <a
+              href="https://wa.me/14155238886?text=join%20meat-goes"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => {
+                localStorage.setItem(OPTIN_KEY, '1');
+                setWaOptedIn(true);
+              }}
+              className="flex-1 py-2.5 rounded-xl text-[14px] font-semibold text-white text-center transition-all active:scale-[0.98]"
+              style={{ background: '#25D366' }}
+            >
+              Open WhatsApp to activate →
+            </a>
+            <button
+              onClick={() => {
+                localStorage.setItem(OPTIN_KEY, '1');
+                setWaOptedIn(true);
+              }}
+              className="text-[13px] text-[#AEAEB2] hover:text-[#6E6E73] transition-colors"
+            >
+              Skip
+            </button>
+          </div>
+        </div>
+      )}
 
       <div
         className="bg-white rounded-2xl overflow-hidden"
