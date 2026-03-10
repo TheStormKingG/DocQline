@@ -70,15 +70,32 @@ const App: React.FC = () => {
     return inBuilding.length + inService.length;
   };
 
-  // Helper: Send notification to customer
+  // Helper: Send notification via Twilio WhatsApp / SMS
   const sendNotification = async (ticket: Ticket, message: string) => {
-    // In production, this would integrate with SMS/WhatsApp API
+    const functionUrl = import.meta.env.VITE_TWILIO_FUNCTION_URL as string | undefined;
     console.log(`📱 Notification to ${ticket.name} (${ticket.phone}) via ${ticket.channel}: ${message}`);
-    // Simulate notification - in real app, call Twilio, WhatsApp API, etc.
-    if (ticket.channel === CommsChannel.SMS) {
-      // SMS notification logic here
-    } else if (ticket.channel === CommsChannel.WHATSAPP) {
-      // WhatsApp notification logic here
+
+    if (!functionUrl || functionUrl.includes('XXXX') || !ticket.phone) {
+      // Twilio Function URL not configured yet — log only
+      return;
+    }
+
+    try {
+      const res = await fetch(functionUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to:      ticket.phone,
+          message,
+          channel: ticket.channel, // 'SMS' or 'WHATSAPP'
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        console.error('📱 Notification failed:', err);
+      }
+    } catch (err) {
+      console.error('📱 Notification error:', err);
     }
   };
 
@@ -215,10 +232,10 @@ const App: React.FC = () => {
           t.id === nextCustomer.id ? { ...t, ...updates } : t
         ));
         
-        // Send notification: Patient called to check in at reception
+        // ── Trigger 2: Patient promoted — please enter the clinic ──
         await sendNotification(
           nextCustomer,
-          `You have been called! Please proceed to reception to check in. You have 10 minutes to confirm your arrival or you will be moved back in the queue.`
+          `🏥 ${nextCustomer.name}, it's almost your turn!\n\nPlease come to DocQline Medical reception to check in. Your number is *#${nextCustomer.queueNumber}*.\n\nYou have *${selectedBranch.gracePeriodMinutes} minutes* to arrive or your spot will be given to the next patient.`,
         );
       }
     }
@@ -330,6 +347,12 @@ const App: React.FC = () => {
     ticketsRef.current = [...ticketsRef.current, newTicket];
     setTickets(prev => [...prev, newTicket]);
     setCurrentCustomerId(newTicket.id);
+
+    // ── Trigger 1: Notify patient they have joined the queue ──
+    await sendNotification(
+      newTicket,
+      `Hi ${name}! ✅ You've joined the queue at DocQline Medical.\n\nYour number: *#${nextNum}*\n\nWe'll message you when it's almost your turn. Stay nearby!`,
+    );
   };
 
   const updateTicketStatus = async (id: string, status: TicketStatus, triggeredBy: 'system' | 'reception' | 'teller' | 'customer' = 'reception', reason?: string) => {
@@ -356,6 +379,11 @@ const App: React.FC = () => {
     if (status === TicketStatus.IN_TRANSACTION || status === TicketStatus.IN_SERVICE) {
       updates.transactionStartedAt = Date.now();
       updates.tellerId = tellerId;
+      // ── Trigger 3: Notify patient the doctor is ready for them ──
+      await sendNotification(
+        ticket,
+        `🩺 ${ticket.name}, the doctor is ready for you now!\n\nPlease come through to the consultation room. Your number is *#${ticket.queueNumber}*.`,
+      );
     }
     if (status === TicketStatus.SERVED || status === TicketStatus.COMPLETED) {
       updates.transactionEndedAt = Date.now();
